@@ -5,6 +5,8 @@
 #include <iostream>
 #include <cmath>
 
+//Function that randomly generates particles:
+// to do: replace it with correct implementation
 std::vector<Particle> generateRandomParticles(int N) {
     std::vector<Particle> particles;
 
@@ -49,55 +51,78 @@ std::vector<Particle> generateRandomParticles(int N) {
 }
 
 int main() {
-        std::cout << "Start" << "\n";
     // Define the gravitational constant and time step
-    const double G = 6.67430e-11; // in m^3 kg^-1 s^-2
-    const double delta_t = 0.01; // in seconds
+    const double G = 1; // in m^3 kg^-1 s^-2 !!!true value=6.67430e-11!!!
+    const double delta_t = 0.001; // in seconds
 
     // Create a vector of particles
     std::vector<Particle> particles;
-
-    particles = generateRandomParticles(2);
+    
+    //particles.resize(2);
+    Particle p1(20, 0.0, 0.0, 0.0, 0.0);
+    particles.push_back(p1);
+    Particle p2(70, 20, 0.0, 0.0, 0.0);
+    particles.push_back(p2);
 
     // Print the initial state of the particles
     std::cout << "Initial state:\n";
     for (const Particle& p : particles) {
-        std::cout << p.getPos() << "\n";
+        //std::cout << "Position: " << p.getPos()[0] << " " << p.getPos()[1] << "\n";
+        //std::cout << "Mass: " << p.getMass() << std::endl;
+        //std::cout << "Force: " << p.getForce()[0] << " " << p.getForce()[1] << "\n";
+        //std::cout << "Velocity: " << p.getVel()[0] << " " << p.getVel()[1] << "\n";
+        p.print_states();
     }
 
     // Perform the n-body simulation
-    for (Particle& q : particles) {
-        q.resetForce();
-    }
+    //for (Particle& q : particles) {
+    //    q.resetForce();
+    //}
 
-    for (int i = 0; i < particles.size(); i++) {
-        Particle& q = particles[i];
-        for (int j = i + 1; j < particles.size(); j++) {
-            Particle& k = particles[j];
+    //For now it performs only two iterations, for loop with z needs to be changed 
+    for(int z=0; z<2; ++z){
+        for (int i = 0; i < particles.size(); i++) {
+            Particle& q = particles[i];
+            q.resetForce();
+            for (int j = i + 1; j < particles.size(); j++) {
+                Particle& k = particles[j];
 
-            double x_diff = q.getPos()[0] - k.getPos()[0];
-            double y_diff = q.getPos()[1] - k.getPos()[1];
-            double dist = sqrt(x_diff * x_diff + y_diff * y_diff);
-            double dist_cubed = dist * dist * dist;
+                double x_diff = k.getPos()[0] - q.getPos()[0];
+                double y_diff = k.getPos()[1] - q.getPos()[1];
+                double dist = sqrt(x_diff * x_diff + y_diff * y_diff);
+                double dist_cubed = dist * dist * dist;
 
-            double force_qk[2];
-            force_qk[0] = G * q.getMass() * k.getMass() / dist_cubed * x_diff;
-            force_qk[1] = G * q.getMass() * k.getMass() / dist_cubed * y_diff;
+                double force_qk[2];
+                force_qk[0] = G * q.getMass() * k.getMass() / dist_cubed * x_diff;
+                force_qk[1] = G * q.getMass() * k.getMass() / dist_cubed * y_diff;
 
-            // Newton's third law
-            q.addForce(force_qk[0], force_qk[1]);
-            k.addForce(-force_qk[0], -force_qk[1]);
+                // Newton's third law
+                q.addForce(force_qk[0], force_qk[1]);
+                k.addForce(-force_qk[0], -force_qk[1]);
 
-            // Update position and velocity
-            q.update(delta_t);
-            k.update(delta_t);
+                // Update position and velocity
+                q.update(delta_t);
+                k.update(delta_t);
+
+
+            }
         }
+        //std::cout << "--------------------------------------------\n";
+        //    for (const Particle& p : particles) {
+        //        std::cout << "Position: " << p.getPos()[0] << " " << p.getPos()[1] << "\n";
+        //        std::cout << "Mass: " << p.getMass() << std::endl;
+        //        std::cout << "Force: " << p.getForce()[0] << " " << p.getForce()[1] << "\n";
+        //        std::cout << "Velocity: " << p.getVel()[0] << " " << p.getVel()[1] << "\n";
+        //    }
+        //std::cout << abs(particles[0].getPos()[0] - particles[1].getPos()[0])<< std::endl;
+        //std::cout << particles[0].getVel()[0] << std::endl;
     }
 
     // Print the final state of the particles
+    std::cout << "--------------------------------------------\n";
     std::cout << "Final state:\n";
     for (const Particle& p : particles) {
-        std::cout << p.getPos() << "\n";
+        p.print_states();
     }
 
     return 0;
