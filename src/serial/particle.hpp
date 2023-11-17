@@ -7,6 +7,7 @@
 class Particle {
     public:
         // A constructor that initializes the mass, position, and velocity of the particle
+        //to do: make it better
         Particle(double m, double x, double y, double vx, double vy) {
             mass = m;
             pos.resize(2);
@@ -21,9 +22,6 @@ class Particle {
         }
 
         double getMass() const;
-        //double* getPos();
-        //double* getVel();
-        //double* getForce();
         std::vector<double> getPos() const;
         std::vector<double> getVel() const;
         std::vector<double> getForce() const;

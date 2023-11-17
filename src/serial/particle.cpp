@@ -6,17 +6,14 @@ double Particle::getMass() const {
 }
 
 std::vector<double> Particle::getPos() const{
-//double* Particle::getPos() {
     return pos;
 }
 
 std::vector<double> Particle::getVel() const{
-//double* Particle::getVel() {
     return vel;
 }
 
 std::vector<double> Particle::getForce() const{
-//double* Particle::getForce() {
     return force;
 }
 
