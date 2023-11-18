@@ -5,9 +5,9 @@
 #include <iostream>
 #include <cmath>
 
-//Function that randomly generates particles:
+// Function that randomly generates particles:
 // to do: replace it with correct implementation
-std::vector<Particle> generateRandomParticles(int N) {
+std::vector<Particle> generateRandomParticles(int N, int minMass = 1, int maxMass = 99, int posBoundary = 100, int maxVx = 100, int maxVy = 100) {
     std::vector<Particle> particles;
 
     // Initialize random seed
@@ -21,8 +21,8 @@ std::vector<Particle> generateRandomParticles(int N) {
             uniquePosition = true;
 
             // Generate random position between -100 and 100
-            x = -100 + static_cast<double>(rand()) / (static_cast<double>(RAND_MAX/200));
-            y = -100 + static_cast<double>(rand()) / (static_cast<double>(RAND_MAX/200));
+            x = -posBoundary + static_cast<double>(rand()) / (static_cast<double>(RAND_MAX/(2*posBoundary)));
+            y = -posBoundary + static_cast<double>(rand()) / (static_cast<double>(RAND_MAX/(2*posBoundary)));
 
             // Check if the position is unique
             for (const Particle& p : particles) {
@@ -34,11 +34,11 @@ std::vector<Particle> generateRandomParticles(int N) {
         }
 
         // Generate random mass between 1 and 100
-        double mass = 1 + static_cast<double>(rand()) / (static_cast<double>(RAND_MAX/99));
+        double mass = minMass + static_cast<double>(rand()) / (static_cast<double>(RAND_MAX/(maxMass-1)));
 
         // Generate random velocity between -100 and 100
-        double vx = -100 + static_cast<double>(rand()) / (static_cast<double>(RAND_MAX/200));
-        double vy = -100 + static_cast<double>(rand()) / (static_cast<double>(RAND_MAX/200));
+        double vx = -maxVx + static_cast<double>(rand()) / (static_cast<double>(RAND_MAX/(2*maxVx)));
+        double vy = -maxVy + static_cast<double>(rand()) / (static_cast<double>(RAND_MAX/(2*maxVy)));
 
         // Create a new particle with the random mass, position, and velocity
         Particle p(mass, x, y, vx, vy);
