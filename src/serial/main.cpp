@@ -1,12 +1,12 @@
 #include <vector>
 #include "particle.hpp" 
+#include "force.hpp"
 #include <cstdlib> 
 #include <ctime>
 #include <iostream>
 #include <cmath>
 
 // Function that randomly generates particles:
-// to do: replace it with correct implementation
 std::vector<Particle> generateRandomParticles(int N, int minMass = 1, int maxMass = 99, int posBoundary = 100, int maxVx = 100, int maxVy = 100) {
     std::vector<Particle> particles;
 
@@ -35,13 +35,14 @@ std::vector<Particle> generateRandomParticles(int N, int minMass = 1, int maxMas
 
         // Generate random mass between 1 and 100
         double mass = minMass + static_cast<double>(rand()) / (static_cast<double>(RAND_MAX/(maxMass-1)));
+        double charge = 0.0;
 
         // Generate random velocity between -100 and 100
         double vx = -maxVx + static_cast<double>(rand()) / (static_cast<double>(RAND_MAX/(2*maxVx)));
         double vy = -maxVy + static_cast<double>(rand()) / (static_cast<double>(RAND_MAX/(2*maxVy)));
 
         // Create a new particle with the random mass, position, and velocity
-        Particle p(mass, x, y, vx, vy);
+        Particle p(mass, charge, x, y, vx, vy);
 
         // Add the particle to the vector
         particles.push_back(p);
@@ -52,16 +53,15 @@ std::vector<Particle> generateRandomParticles(int N, int minMass = 1, int maxMas
 
 int main() {
     // Define the gravitational constant and time step
-    const double G = 1; // in m^3 kg^-1 s^-2 !!!true value=6.67430e-11!!!
     const double delta_t = 0.001; // in seconds
 
     // Create a vector of particles
     std::vector<Particle> particles;
+    GravitationalForce f;
     
-    //particles.resize(2);
-    Particle p1(20, 0.0, 0.0, 0.0, 0.0);
+    Particle p1(20.0, 0.0, 0.0, 0.0, 0.0, 0.0);
     particles.push_back(p1);
-    Particle p2(70, 20, 0.0, 0.0, 0.0);
+    Particle p2(70.0, 0.0, 20.0, 0.0, 0.0, 0.0);
     particles.push_back(p2);
 
     // Print the initial state of the particles
@@ -79,22 +79,19 @@ int main() {
     //    q.resetForce();
     //}
 
+    
     //For now it performs only two iterations, for loop with z needs to be changed 
-    for(int z=0; z<2; ++z){
+    //for(int z=0; z<2; ++z){
         for (int i = 0; i < particles.size(); i++) {
-            Particle& q = particles[i];
+            Particle &q = particles[i];
+            
             q.resetForce();
             for (int j = i + 1; j < particles.size(); j++) {
-                Particle& k = particles[j];
+                Particle &k = particles[j];
 
-                double x_diff = k.getPos()[0] - q.getPos()[0];
-                double y_diff = k.getPos()[1] - q.getPos()[1];
-                double dist = sqrt(x_diff * x_diff + y_diff * y_diff);
-                double dist_cubed = dist * dist * dist;
+                std::array<double,2> force_qk;
 
-                double force_qk[2];
-                force_qk[0] = G * q.getMass() * k.getMass() / dist_cubed * x_diff;
-                force_qk[1] = G * q.getMass() * k.getMass() / dist_cubed * y_diff;
+                force_qk = f.calculateForce(k,q);
 
                 // Newton's third law
                 q.addForce(force_qk[0], force_qk[1]);
@@ -116,7 +113,7 @@ int main() {
         //    }
         //std::cout << abs(particles[0].getPos()[0] - particles[1].getPos()[0])<< std::endl;
         //std::cout << particles[0].getVel()[0] << std::endl;
-    }
+    //}
 
     // Print the final state of the particles
     std::cout << "--------------------------------------------\n";

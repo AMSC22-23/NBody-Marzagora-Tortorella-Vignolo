@@ -21,6 +21,7 @@ class Particle {
             //force.resize(2);
             force[0] = 0.0;
             force[1] = 0.0;
+            type = 0;
         }
 
         double getMass() const;
@@ -32,6 +33,8 @@ class Particle {
         void addForce(double fx, double fy);
         void update(double delta_t);
         void print_states() const;
+        bool returnType() const;
+        ~Particle(){}
     private:
         // The mass of the particle
         double mass;
@@ -43,6 +46,8 @@ class Particle {
         std::array<double, 2> force;
         // Charge of the particle(for the Coulomb force)
         double charge;
+        // type of particle: 1 if Coulomb, 0 otherwise 
+        bool type;
 };
 
 #endif 
