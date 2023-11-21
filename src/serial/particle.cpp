@@ -5,20 +5,21 @@ double Particle::getMass() const {
     return mass;
 }
 
-std::vector<double> Particle::getPos() const{
+std::array<double, 2> Particle::getPos() const{
     return pos;
 }
 
-std::vector<double> Particle::getVel() const{
+
+std::array<double, 2> Particle::getVel() const{
     return vel;
 }
 
-std::vector<double> Particle::getForce() const{
+std::array<double, 2> Particle::getForce() const{
     return force;
 }
 
 void Particle::resetForce() {
-    force.resize(2);
+    //force.resize(2);
     force[0] = 0.0;
     force[1] = 0.0;
 }

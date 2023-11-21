@@ -3,6 +3,7 @@
 
 #include <vector>
 #include <iostream>
+#include <array>
 
 class Particle {
     public:
@@ -10,21 +11,21 @@ class Particle {
         //to do: make it better
         Particle(double m, double x, double y, double vx, double vy) {
             mass = m;
-            pos.resize(2);
+            //pos.resize(2);
             pos[0] = x;
             pos[1] = y;
-            vel.resize(2);
+            //vel.resize(2);
             vel[0] = vx;
             vel[1] = vy;
-            force.resize(2);
+            //force.resize(2);
             force[0] = 0.0;
             force[1] = 0.0;
         }
 
         double getMass() const;
-        std::vector<double> getPos() const;
-        std::vector<double> getVel() const;
-        std::vector<double> getForce() const;
+        std::array<double, 2> getPos() const;
+        std::array<double, 2> getVel() const;
+        std::array<double, 2> getForce() const;
         void resetForce();
         void addForce(double fx, double fy);
         void update(double delta_t);
@@ -33,14 +34,11 @@ class Particle {
         // The mass of the particle
         double mass;
         // The position of the particle as a two-dimensional vector
-        std::vector<double> pos;
-        //double pos[2];
+        std::array<double, 2> pos;
         // The velocity of the particle as a two-dimensional vector
-        std::vector<double> vel;
-        //double vel[2];
+        std::array<double, 2> vel;
         // The force acting on the particle as a two-dimensional vector
-        std::vector<double> force;
-        //double force[2];
+        std::array<double, 2> force;
 };
 
 #endif 
