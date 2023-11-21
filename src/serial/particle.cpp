@@ -5,6 +5,10 @@ double Particle::getMass() const {
     return mass;
 }
 
+double Particle::getCharge() const {
+    return charge;
+}
+
 std::array<double, 2> Particle::getPos() const{
     return pos;
 }
@@ -43,4 +47,10 @@ void Particle::print_states() const{
     std::cout << "Mass: " << mass << std::endl;
     std::cout << "Force: " << force[0] << " " << force[1] << std::endl;
     std::cout << "Velocity: " << vel[0] << " " << vel[1] << std::endl;
+}
+
+//not to sure about this, maybe it's better to take it as input
+//depends on the interactions (ask!!!)
+bool Particle::returnType() const{
+    if (charge != 0.0) return true; 
 }

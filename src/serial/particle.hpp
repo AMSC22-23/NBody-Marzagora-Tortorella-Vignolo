@@ -9,8 +9,9 @@ class Particle {
     public:
         // A constructor that initializes the mass, position, and velocity of the particle
         //to do: make it better
-        Particle(double m, double x, double y, double vx, double vy) {
+        Particle(double m, double c, double x, double y, double vx, double vy) {
             mass = m;
+            charge = c;
             //pos.resize(2);
             pos[0] = x;
             pos[1] = y;
@@ -23,6 +24,7 @@ class Particle {
         }
 
         double getMass() const;
+        double getCharge() const;
         std::array<double, 2> getPos() const;
         std::array<double, 2> getVel() const;
         std::array<double, 2> getForce() const;
@@ -39,6 +41,8 @@ class Particle {
         std::array<double, 2> vel;
         // The force acting on the particle as a two-dimensional vector
         std::array<double, 2> force;
+        // Charge of the particle(for the Coulomb force)
+        double charge;
 };
 
 #endif 
