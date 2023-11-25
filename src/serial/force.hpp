@@ -31,6 +31,18 @@ class CoulombForce : public Force{
         double const K = 8.987e-09;
 };
 
-//Other forces to be added
+class NuclearForce : public Force{
+    public: 
+        std::array<double,2> calculateForce(const Particle &k, const Particle &q) const override;
+    private:
+        double const r0 = 1.0;
+};
+
+class RepulsiveForce : public Force {
+    public: 
+        std::array<double,2> calculateForce(const Particle &k, const Particle &q) const override;
+    private:
+        double const kp = 1.0;
+};
 
 #endif

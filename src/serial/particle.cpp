@@ -1,5 +1,6 @@
 // A class for a particle in an n-body simulation
 #include "particle.hpp"
+#include <cmath>
 
 double Particle::getMass() const {
     return mass;
@@ -53,4 +54,5 @@ void Particle::print_states() const{
 //depends on the interactions (ask!!!)
 bool Particle::returnType() const{
     if (charge != 0.0) return true; 
+    else return false;
 }

@@ -67,10 +67,6 @@ int main() {
     // Print the initial state of the particles
     std::cout << "Initial state:\n";
     for (const Particle& p : particles) {
-        //std::cout << "Position: " << p.getPos()[0] << " " << p.getPos()[1] << "\n";
-        //std::cout << "Mass: " << p.getMass() << std::endl;
-        //std::cout << "Force: " << p.getForce()[0] << " " << p.getForce()[1] << "\n";
-        //std::cout << "Velocity: " << p.getVel()[0] << " " << p.getVel()[1] << "\n";
         p.print_states();
     }
 
@@ -104,15 +100,6 @@ int main() {
 
             }
         }
-        //std::cout << "--------------------------------------------\n";
-        //    for (const Particle& p : particles) {
-        //        std::cout << "Position: " << p.getPos()[0] << " " << p.getPos()[1] << "\n";
-        //        std::cout << "Mass: " << p.getMass() << std::endl;
-        //        std::cout << "Force: " << p.getForce()[0] << " " << p.getForce()[1] << "\n";
-        //        std::cout << "Velocity: " << p.getVel()[0] << " " << p.getVel()[1] << "\n";
-        //    }
-        //std::cout << abs(particles[0].getPos()[0] - particles[1].getPos()[0])<< std::endl;
-        //std::cout << particles[0].getVel()[0] << std::endl;
     //}
 
     // Print the final state of the particles
