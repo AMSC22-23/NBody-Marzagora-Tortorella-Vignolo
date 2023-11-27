@@ -51,7 +51,7 @@ class CustomForce : public Force{
     public:
         std::array<double,2> calculateForce(const Particle &k, const Particle &q) const override;
     private:
-        double const G = 1; 
+        double const G = 20; 
 };
 
 #endif
