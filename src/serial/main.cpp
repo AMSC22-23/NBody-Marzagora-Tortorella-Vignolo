@@ -100,7 +100,7 @@ int main() {
 
     for (const Particle& p : particles) {
         
-        p.print_states();
+        //p.print_states();
 
         // Write on file the initial state
         if (file.is_open()) {
@@ -145,7 +145,7 @@ int main() {
                 q.getPos()[0] - q.getRadius() < -dim ||
                 q.getPos()[1] + q.getRadius()> dim || 
                 q.getPos()[1] - q.getRadius()< -dim){
-                std::cout << "Out of bounds for " << q.getId() << std::endl;
+                //std::cout << "Out of bounds for " << q.getId() << std::endl;
                 q.manage_collision(q, dim);
             }
             for (int j = i + 1; j < particles.size(); j++) {
@@ -153,7 +153,7 @@ int main() {
 
                 //check collisions
                 if(q.square_distance(k) < q.getRadius() + k.getRadius()){
-                    std::cout << "Collision between " << q.getId() << " and " << k.getId() << std::endl;
+                    //std::cout << "Collision between " << q.getId() << " and " << k.getId() << std::endl;
                     //collision method
                     q.manage_collision(k, 0.0);
                 }
