@@ -39,6 +39,17 @@ void Particle::resetForce() {
 //    force[1] += fy;
 //}
 
+double Particle::square_distance(const Particle &p) const{
+    const auto& k_pos = getPos();
+    const auto& p_pos = p.getPos();
+
+    double x_diff = k_pos[0] - p_pos[0];
+    double y_diff = k_pos[1] - p_pos[1];
+
+    double square_dist = x_diff * x_diff + y_diff * y_diff;
+    return square_dist;
+}
+
 void Particle::addForce(Particle &k, const Force& f) {
     std::array<double,2> force_qk;
     force_qk = f.calculateForce(k, *this);
@@ -75,9 +86,42 @@ void Particle::print_states() const{
     std::cout << "Velocity: " << vel[0] << " " << vel[1] << std::endl;
 }
 
+//method that returns the radius of the particle
+double Particle::getRadius() const{
+    return radius;
+}
+
 //not to sure about this, maybe it's better to take it as input
 //depends on the interactions (ask!!!)
 bool Particle::returnType() const{
     if (charge != 0.0) return true; 
     else return false;
+}
+
+void Particle::setVel(double vx, double vy){
+    vel[0] = vx;
+    vel[1] = vy;
+}
+
+void Particle::manage_collision(Particle &p, double dim){
+    if(dim){
+        //elastic collision with wall
+        if(pos[0] + radius > dim || pos[0] - radius < -dim){
+            vel[0] = -vel[0];
+        }
+        if(pos[1] + radius > dim || pos[1] - radius < -dim){
+            vel[1] = -vel[1];
+        }
+    }
+    else{
+        //elastic collision
+        double xvel_prev, yvel_prev, xvel_new, yvel_new;
+        xvel_prev = vel[0];
+        yvel_prev = vel[1];
+        vel[0] = ((mass - p.getMass())*vel[0]+2*p.getMass()*p.getVel()[0]) / (mass + p.getMass());
+        vel[1] = ((mass - p.getMass())*vel[1]+2*p.getMass()*p.getVel()[1]) / (mass + p.getMass());
+        xvel_new = ((p.getMass() - mass)*p.getVel()[0]+2*mass*xvel_prev) / (mass + p.getMass());
+        yvel_new = ((p.getMass() - mass)*p.getVel()[1]+2*mass*yvel_prev) / (mass + p.getMass());
+        p.setVel(xvel_new, yvel_new);
+    }
 }

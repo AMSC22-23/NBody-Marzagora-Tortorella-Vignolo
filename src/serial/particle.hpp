@@ -24,8 +24,8 @@ class Particle {
         }*/
 
         // A constructor that initializes the mass, position, and velocity of the particle
-        Particle(int id, double m, double c, double x, double y, double vx, double vy)
-            : id(id), mass(m), charge(c), pos{x, y}, vel{vx, vy}, force{0.0, 0.0}, type(0) {}
+        Particle(int id, double m, double c, double x, double y, double vx, double vy, double radius)
+            : id(id), mass(m), charge(c), pos{x, y}, vel{vx, vy}, force{0.0, 0.0}, type(0), radius(radius) {}
 
         //getter methods for class attributes
         double getMass() const;
@@ -47,6 +47,15 @@ class Particle {
         void print_states() const;
         //method that returns type of the particles to instatiate the right kind of force
         bool returnType() const;
+        //method that returns the distance between two particles
+        double square_distance(const Particle &p) const;
+        //method that returns the radius of the particle
+        double getRadius() const;
+        //method that manage collisions
+        void manage_collision(Particle &p, double dim = 0.0);
+        //method that set the velocity of the particle
+        void setVel(double vx, double vy);
+
         ~Particle(){}
     private:
         // If of the particle
@@ -63,8 +72,8 @@ class Particle {
         double charge;
         // type of particle: 1 if Coulomb, 0 otherwise 
         bool type;
-        // variables to compute distance
-        double x_diff, y_diff;
+        // radius of the particle
+        double radius;
 };
 
 #endif 
