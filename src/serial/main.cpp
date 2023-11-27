@@ -15,6 +15,7 @@ std::vector<Particle> generateRandomParticles(int N, int minMass = 1, int maxMas
     srand(time(0));
 
     for (int i = 0; i < N; i++) {
+
         bool uniquePosition = false;
         double x, y;
 
@@ -43,7 +44,7 @@ std::vector<Particle> generateRandomParticles(int N, int minMass = 1, int maxMas
         double vy = -maxVy + static_cast<double>(rand()) / (static_cast<double>(RAND_MAX/(2*maxVy)));
 
         // Create a new particle with the random mass, position, and velocity
-        Particle p(mass, charge, x, y, vx, vy);
+        Particle p(i, mass, charge, x, y, vx, vy);
 
         // Add the particle to the vector
         particles.push_back(p);
@@ -59,20 +60,23 @@ int main() {
     // Create a vector of particles
     std::vector<Particle> particles;
     CustomForce f;
+
+    std::ofstream file("coordinates.txt");
     
-    Particle p1(100.0, 0.0, 0.0, 0.0, 0.0, 0.0);
+    Particle p1(1, 100.0, 0.0, 0.0, 0.0, 0.0, 0.0);
     particles.push_back(p1);
-    Particle p2(1.0, 0.0, 1.0, 0.0, 0.0, 10.0);
+    Particle p2(2, 1.0, 0.0, 1.0, 0.0, 0.0, 10.0);
     particles.push_back(p2);
 
     // Print the initial state of the particles
     std::cout << "Initial state:\n";
     for (const Particle& p : particles) {
+        
         p.print_states();
 
         // Write on file the initial state
         if (file.is_open()) {
-            file << i << "," << p.getPos()[0] << "," <<  p.getPos()[1] << std::endl;
+            file << p.getId() << "," << p.getPos()[0] << "," <<  p.getPos()[1] << std::endl;
         } else {
             std::cout << "Unable to open file";
         }
@@ -120,7 +124,6 @@ int main() {
             z==it-1? q.update(delta_t):q.update_and_reset(delta_t);
 //          q.resetForce();
         }
-    }  
         
         for (int i = 0; i < particles.size(); i++) {
             Particle &q = particles[i];
