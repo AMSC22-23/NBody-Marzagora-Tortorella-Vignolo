@@ -4,6 +4,9 @@
 #include <vector>
 #include <iostream>
 #include <array>
+//#include "force.hpp"
+
+class Force;
 
 class Particle {
     public:
@@ -33,9 +36,12 @@ class Particle {
         //method that resets total force for next implementation
         void resetForce();
         //method that adds new values of a force
-        void addForce(double fx, double fy);
+        //void addForce(double fx, double fy);
+        void addForce(Particle &k, const Force& f);
         // method that updates current values of a force
         void update(double delta_t);
+        //method that updates current values of a force and resets it for next implementation
+        void update_and_reset(const double delta_t);
         //method that prints current states of the particles 
         void print_states() const;
         //method that returns type of the particles to instatiate the right kind of force

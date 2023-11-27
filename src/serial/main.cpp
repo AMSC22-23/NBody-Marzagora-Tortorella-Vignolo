@@ -53,15 +53,15 @@ std::vector<Particle> generateRandomParticles(int N, int minMass = 1, int maxMas
 
 int main() {
     // Define the gravitational constant and time step
-    const double delta_t = 0.001; // in seconds
+    const double delta_t = 0.000001; // in seconds
 
     // Create a vector of particles
     std::vector<Particle> particles;
-    GravitationalForce f;
+    CustomForce f;
     
-    Particle p1(20.0, 0.0, 0.0, 0.0, 0.0, 0.0);
+    Particle p1(100.0, 0.0, 0.0, 0.0, 0.0, 0.0);
     particles.push_back(p1);
-    Particle p2(70.0, 0.0, 20.0, 0.0, 0.0, 0.0);
+    Particle p2(1.0, 0.0, 1.0, 0.0, 0.0, 10.0);
     particles.push_back(p2);
 
     // Print the initial state of the particles
@@ -78,35 +78,49 @@ int main() {
     
     //For now it performs only two iterations, for loop with z needs to be changed 
     //for(int z=0; z<2; ++z){
+//        for (int i = 0; i < particles.size(); i++) {
+//            Particle &q = particles[i];
+//            
+//            for (int j = i + 1; j < particles.size(); j++) {
+//                Particle &k = particles[j];
+//
+//                std::array<double,2> force_qk;
+//
+//                force_qk = f.calculateForce(k,q);
+//
+//                // Newton's third law
+//                q.addForce(force_qk[0], force_qk[1]);
+//                k.addForce(-force_qk[0], -force_qk[1]);
+//
+//            }
+//            q.update(delta_t);
+//            q.resetForce();
+//        }
+    //}
+    int it = 70;
+    for (int z = 0; z < it; ++z){
         for (int i = 0; i < particles.size(); i++) {
             Particle &q = particles[i];
-            
-            q.resetForce();
+
             for (int j = i + 1; j < particles.size(); j++) {
                 Particle &k = particles[j];
-
                 std::array<double,2> force_qk;
-
-                force_qk = f.calculateForce(k,q);
-
+                //force_qk = f.calculateForce(k,q);
                 // Newton's third law
-                q.addForce(force_qk[0], force_qk[1]);
-                k.addForce(-force_qk[0], -force_qk[1]);
-
-                // Update position and velocity
-                q.update(delta_t);
-                k.update(delta_t);
-
-
+                q.addForce(k, f);
             }
+            z==it-1? q.update(delta_t):q.update_and_reset(delta_t);
+//          q.resetForce();
         }
-    //}
+    }
 
     // Print the final state of the particles
     std::cout << "--------------------------------------------\n";
     std::cout << "Final state:\n";
     for (const Particle& p : particles) {
         p.print_states();
+
+        std::cout << "Distance from origin: " << sqrt(pow(p.getPos()[0],2) + pow(p.getPos()[1],2)) << "\n";
     }
 
     return 0;

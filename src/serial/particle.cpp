@@ -1,4 +1,5 @@
 // A class for a particle in an n-body simulation
+#include "force.hpp"
 #include "particle.hpp"
 #include <cmath>
 
@@ -29,9 +30,18 @@ void Particle::resetForce() {
     force[1] = 0.0;
 }
 
-void Particle::addForce(double fx, double fy) {
-    force[0] += fx;
-    force[1] += fy;
+//void Particle::addForce(double fx, double fy) {
+//    force[0] += fx;
+//    force[1] += fy;
+//}
+
+void Particle::addForce(Particle &k, const Force& f) {
+    std::array<double,2> force_qk;
+    force_qk = f.calculateForce(k, *this);
+    force[0] += force_qk[0];
+    force[1] += force_qk[1];
+    k.force[0] -= force_qk[0];
+    k.force[1] -= force_qk[1];
 }
 
 void Particle::update(double delta_t) {
@@ -41,6 +51,16 @@ void Particle::update(double delta_t) {
     
     vel[0] += (force[0] / mass) * delta_t;
     vel[1] += (force[1] / mass) * delta_t;
+}
+
+void Particle::update_and_reset(const double delta_t) {
+    // Euler integration for position and velocity update
+    pos[0] += vel[0] * delta_t;
+    pos[1] += vel[1] * delta_t;
+    
+    vel[0] += (force[0] / mass) * delta_t;
+    vel[1] += (force[1] / mass) * delta_t;
+    resetForce();
 }
 
 void Particle::print_states() const{
