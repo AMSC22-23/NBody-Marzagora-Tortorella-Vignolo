@@ -1,4 +1,5 @@
 # Import necessary libraries
+import matplotlib; matplotlib.use("TkAgg")
 import matplotlib.pyplot as plt
 import matplotlib.animation as animation
 import numpy as np
@@ -12,11 +13,32 @@ t = np.arange(0, 10, 0.01)
 
 # Generate x and y coordinates for each body
 # Each body follows the same path in this example
-x = [list(t) for _ in range(N)]
-y = [list(t) for _ in range(N)]
+#x = [list(t) for _ in range(N)]
+#y = [list(t) for _ in range(N)]
+
+# Open the file for reading
+with open('coordinates.txt', 'r') as f:
+    # Read the first line to get the number of particles
+    num_particles = int(f.readline().strip())
+    print(num_particles)
+    # Initialize the vectors of vectors
+    x = [[] for _ in range(num_particles)]
+    y = [[] for _ in range(num_particles)]
+    print(x)
+    # Read the rest of the file line by line
+    for line in f:
+        # Split the line into id, x, and y
+        id, x_val, y_val = map(float, line.strip().split(','))
+        print(id)
+        # Append the x and y values to the appropriate vectors
+        x[int(id)].append(x_val)
+        y[int(id)].append(y_val)
 
 # Create a new figure and axes
 fig, ax = plt.subplots()
+
+print(x)
+print(y)
 
 # Create a list of Line2D objects (one for each body)
 # These will be used to plot the positions of the bodies
@@ -39,8 +61,8 @@ def animate(i):
     return lines
 
 # Set the limits of x and y axes
-ax.set_xlim([0, 3])
-ax.set_ylim([0, 3])
+ax.set_xlim([-3, 3])
+ax.set_ylim([-3, 3])
 
 # Create animation
 # The FuncAnimation function creates an animation by repeatedly calling a function (in this case, animate)
