@@ -42,6 +42,9 @@ std::vector<Particle> generateRandomParticles(int N, int minMass = 1, int maxMas
         double mass = minMass + static_cast<double>(rand()) / (static_cast<double>(RAND_MAX/(maxMass-1)));
         double charge = 0.0;
 
+        // Generate random radius between 1 and 10
+        double radius = 1 + static_cast<double>(rand()) / (static_cast<double>(RAND_MAX/(10-1)));
+
         // Generate random velocity between -100 and 100
         double vx = -maxVx + static_cast<double>(rand()) / (static_cast<double>(RAND_MAX/(2*maxVx)));
         double vy = -maxVy + static_cast<double>(rand()) / (static_cast<double>(RAND_MAX/(2*maxVy)));
@@ -58,20 +61,23 @@ std::vector<Particle> generateRandomParticles(int N, int minMass = 1, int maxMas
 
 int main() {
     // Define the gravitational constant and time step
-    const double delta_t = 0.02; // in seconds
+    const double delta_t = 0.1; // in seconds
+    const double dim = 150;
 
     // Create a vector of particles
     std::vector<Particle> particles;
     CustomForce f;
 
     std::ofstream file("coordinates.txt");
-    
-    Particle p1(0, 100.0, 0.0, 0.0, 0.0, 0.0, 0.0, 4);
-    particles.push_back(p1);
-    Particle p2(1, 1.0, 0.0, 1.0, 0.0, 0.0, 10.0, 10);
-    particles.push_back(p2);
+    //
+    //Particle p1(0, 2.0, 0.0, 0.0, 0.0, 0.0, -50.0, 2.0);
+    //particles.push_back(p1);
+    //Particle p2(1, 3.0, 0.0, 20.0, 0.0, 0.0, 0.0, 3.0);
+    //particles.push_back(p2);
 
-    int n = 2;
+    //generate 100 particles
+    int n = 100;
+    particles = generateRandomParticles(n);
 
     // Print the initial state of the particles
     std::cout << "Initial state:\n";
@@ -135,9 +141,23 @@ int main() {
     for (int z = 0; z < it; ++z){
         for (int i = 0; i < particles.size(); i++) {
             Particle &q = particles[i];
-
+            if(q.getPos()[0]+ q.getRadius() > dim || 
+                q.getPos()[0] - q.getRadius() < -dim ||
+                q.getPos()[1] + q.getRadius()> dim || 
+                q.getPos()[1] - q.getRadius()< -dim){
+                std::cout << "Out of bounds for " << q.getId() << std::endl;
+                q.manage_collision(q, dim);
+            }
             for (int j = i + 1; j < particles.size(); j++) {
                 Particle &k = particles[j];
+
+                //check collisions
+                if(q.square_distance(k) < q.getRadius() + k.getRadius()){
+                    std::cout << "Collision between " << q.getId() << " and " << k.getId() << std::endl;
+                    //collision method
+                    q.manage_collision(k, 0.0);
+                }
+
                 std::array<double,2> force_qk;
                 //force_qk = f.calculateForce(k,q);
                 // Newton's third law

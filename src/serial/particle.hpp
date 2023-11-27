@@ -52,7 +52,7 @@ class Particle {
         //method that returns the radius of the particle
         double getRadius() const;
         //method that manage collisions
-        void manage_collision(Particle &p, double dim = 0.0);
+        void manage_collision(Particle &p, double dim);
         //method that set the velocity of the particle
         void setVel(double vx, double vy);
 
