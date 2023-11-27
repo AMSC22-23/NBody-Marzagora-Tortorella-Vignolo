@@ -5,6 +5,7 @@
 #include <ctime>
 #include <iostream>
 #include <cmath>
+#include <fstream>
 
 // Function that randomly generates particles:
 std::vector<Particle> generateRandomParticles(int N, int minMass = 1, int maxMass = 99, int posBoundary = 100, int maxVx = 100, int maxVy = 100) {
@@ -58,20 +59,33 @@ int main() {
     // Create a vector of particles
     std::vector<Particle> particles;
     GravitationalForce f;
-    
-    Particle p1(20.0, 0.0, 0.0, 0.0, 0.0, 0.0);
+
+    // Create file
+    std::ofstream file("coordinates.txt");
+    //std::ofstream file(filename, std::ios::app);  
+
+    Particle p1(0.000000000000005, 0.0, 0.0, 0.0, 0.0, 0.0);
     particles.push_back(p1);
-    Particle p2(70.0, 0.0, 20.0, 0.0, 0.0, 0.0);
+    Particle p2(7000000000.0, 0.0, 200.0, 0.0, 0.0, 0.0);
     particles.push_back(p2);
 
     // Print the initial state of the particles
     std::cout << "Initial state:\n";
-    for (const Particle& p : particles) {
+    
+    for (int i = 0; i < particles.size(); i++) {
+        Particle &p = particles[i];
         //std::cout << "Position: " << p.getPos()[0] << " " << p.getPos()[1] << "\n";
         //std::cout << "Mass: " << p.getMass() << std::endl;
         //std::cout << "Force: " << p.getForce()[0] << " " << p.getForce()[1] << "\n";
         //std::cout << "Velocity: " << p.getVel()[0] << " " << p.getVel()[1] << "\n";
         p.print_states();
+
+        // Write on file the initial state
+        if (file.is_open()) {
+            file << i << "," << p.getPos()[0] << "," <<  p.getPos()[1] << std::endl;
+        } else {
+            std::cout << "Unable to open file";
+        }
     }
 
     // Perform the n-body simulation
@@ -81,7 +95,7 @@ int main() {
 
     
     //For now it performs only two iterations, for loop with z needs to be changed 
-    //for(int z=0; z<2; ++z){
+    for(int z=0; z<20; ++z){
         for (int i = 0; i < particles.size(); i++) {
             Particle &q = particles[i];
             
@@ -100,10 +114,19 @@ int main() {
                 // Update position and velocity
                 q.update(delta_t);
                 k.update(delta_t);
-
-
             }
         }
+        
+        for (int i = 0; i < particles.size(); i++) {
+            Particle &q = particles[i];
+            // Write on file the updates after delta_t
+            if (file.is_open()) {
+                file << i << "," << q.getPos()[0] << "," <<  q.getPos()[1] << std::endl;
+            } else {
+                std::cout << "Unable to open file";
+            }
+        }
+
         //std::cout << "--------------------------------------------\n";
         //    for (const Particle& p : particles) {
         //        std::cout << "Position: " << p.getPos()[0] << " " << p.getPos()[1] << "\n";
@@ -113,7 +136,7 @@ int main() {
         //    }
         //std::cout << abs(particles[0].getPos()[0] - particles[1].getPos()[0])<< std::endl;
         //std::cout << particles[0].getVel()[0] << std::endl;
-    //}
+    }
 
     // Print the final state of the particles
     std::cout << "--------------------------------------------\n";
@@ -122,5 +145,6 @@ int main() {
         p.print_states();
     }
 
+    file.close();
     return 0;
 }
