@@ -8,7 +8,7 @@
 #include <fstream>
 
 // Function that randomly generates particles:
-std::vector<Particle> generateRandomParticles(int N, int minMass = 1, int maxMass = 99, int posBoundary = 100, int maxVx = 100, int maxVy = 100) {
+std::vector<Particle> generateRandomParticles(int N, int minMass = 1, int maxMass = 99, int posBoundary = 100, int maxVx = 100, int maxVy = 100, int minRadius = 0, int maxRadius = 15) {
     std::vector<Particle> particles;
 
     // Initialize random seed
@@ -35,6 +35,9 @@ std::vector<Particle> generateRandomParticles(int N, int minMass = 1, int maxMas
             }
         }
 
+        // Generate random radius between 0 and 
+        int r = rand() % (maxRadius - minRadius + 1) + minRadius;
+
         // Generate random mass between 1 and 100
         double mass = minMass + static_cast<double>(rand()) / (static_cast<double>(RAND_MAX/(maxMass-1)));
         double charge = 0.0;
@@ -44,7 +47,7 @@ std::vector<Particle> generateRandomParticles(int N, int minMass = 1, int maxMas
         double vy = -maxVy + static_cast<double>(rand()) / (static_cast<double>(RAND_MAX/(2*maxVy)));
 
         // Create a new particle with the random mass, position, and velocity
-        Particle p(i, mass, charge, x, y, vx, vy);
+        Particle p(i, mass, charge, x, y, vx, vy, r);
 
         // Add the particle to the vector
         particles.push_back(p);
@@ -55,7 +58,7 @@ std::vector<Particle> generateRandomParticles(int N, int minMass = 1, int maxMas
 
 int main() {
     // Define the gravitational constant and time step
-    const double delta_t = 0.000001; // in seconds
+    const double delta_t = 0.02; // in seconds
 
     // Create a vector of particles
     std::vector<Particle> particles;
@@ -63,13 +66,32 @@ int main() {
 
     std::ofstream file("coordinates.txt");
     
-    Particle p1(1, 100.0, 0.0, 0.0, 0.0, 0.0, 0.0);
+    Particle p1(0, 100.0, 0.0, 0.0, 0.0, 0.0, 0.0, 4);
     particles.push_back(p1);
-    Particle p2(2, 1.0, 0.0, 1.0, 0.0, 0.0, 10.0);
+    Particle p2(1, 1.0, 0.0, 1.0, 0.0, 0.0, 10.0, 10);
     particles.push_back(p2);
+
+    int n = 2;
 
     // Print the initial state of the particles
     std::cout << "Initial state:\n";
+    if (file.is_open()) {
+        file << n << std::endl;
+        for (const Particle& p : particles) {
+    
+        p.print_states();
+
+        // Write on file the initial state
+        if (file.is_open()) {
+            file << p.getRadius() << std::endl;
+        } else {
+            std::cout << "Unable to open file";
+        }
+    }
+    }else {
+        std::cout << "Unable to open file";
+    }
+
     for (const Particle& p : particles) {
         
         p.print_states();
@@ -109,7 +131,7 @@ int main() {
 //            q.resetForce();
 //        }
     //}
-    int it = 70;
+    int it = 1000;
     for (int z = 0; z < it; ++z){
         for (int i = 0; i < particles.size(); i++) {
             Particle &q = particles[i];
@@ -129,7 +151,7 @@ int main() {
             Particle &q = particles[i];
             // Write on file the updates after delta_t
             if (file.is_open()) {
-                file << i << "," << q.getPos()[0] << "," <<  q.getPos()[1] << std::endl;
+                file << q.getId() << "," << q.getPos()[0] << "," <<  q.getPos()[1] << std::endl;
             } else {
                 std::cout << "Unable to open file";
             }
