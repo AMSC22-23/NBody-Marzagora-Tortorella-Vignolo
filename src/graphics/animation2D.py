@@ -2,12 +2,14 @@
 import matplotlib; matplotlib.use("TkAgg")
 import matplotlib.pyplot as plt
 import matplotlib.animation as animation
+from matplotlib.patches import Circle
 from matplotlib.widgets import Slider
 import numpy as np
 from matplotlib.widgets import Button
+import random
 
 duration = 5; # 5 sec = duration of the simulation
-interval_millisec = 20;  # 20 milliseconds = duration of the frame
+interval_millisec = 50;  # 20 milliseconds = duration of the frame
 frames = int(duration/(interval_millisec*0.001)); # calculate the number of frames given the duration of the simulation
 
 # Open the file for reading
@@ -20,7 +22,6 @@ with open('coordinates.txt', 'r') as f:
     # Initialize the vectors of vectors
     x = [[] for _ in range(num_particles)]
     y = [[] for _ in range(num_particles)]
-    print(x)
     # Read the rest of the file line by line
     for line in f:
         # Split the line into id, x, and y
@@ -32,6 +33,14 @@ with open('coordinates.txt', 'r') as f:
 # Create a new figure and axes
 fig, ax = plt.subplots()
 
+
+# Create a list of Circle objects (one for each body)
+circles = [Circle((0, 0), radius[i], color=(random.random(), random.random(), random.random())) for i in range(len(radius))]
+
+# Add the circles to the axes
+for circle in circles:
+    ax.add_patch(circle)
+
 t = np.arange(0.0, duration, 0.01)
 
 # Create a list of Line2D objects (one for each body)
@@ -39,28 +48,27 @@ lines = [ax.plot([], [], marker='o', markersize=radius[i])[0] for i in range(len
 
 # Initialization function
 # This function is called once before the animation starts
-# It clears the data of each line
+# It sets the initial position of each circle
 def init():
-    for line in lines:
-        line.set_data([], [])
-    return lines
+    for i, circle in enumerate(circles):
+        circle.center = (x[i][0], y[i][0])
+    return circles
 
 # Create a slider axes
 # ax_slider = plt.axes([0.1, 0.01, 0.65, 0.03], facecolor='lightgoldenrodyellow')
 # slider = Slider(ax_slider, 'Time', 0, frames, valinit=0, valstep=1)
 
 # Set the limits of x and y axes
-ax.set_xlim([-5, 5])
-ax.set_ylim([-5, 5])
-
+ax.set_xlim([-150, 150])
+ax.set_ylim([-150, 150])
 
 # Animation function
 # This function is called for each frame of the animation
-# It updates the data of each line to plot only the current point
+# It updates the position of each circle
 def animate(i):
-    for j, line in enumerate(lines):
-        line.set_data(x[j][i:i+1], y[j][i:i+1])  # Only plot the current point
-    return lines
+    for j, circle in enumerate(circles):
+        circle.center = (x[j][i], y[j][i])  # Update the position of the circle
+    return circles
 
 # Slider update function
 def update(i):
@@ -92,7 +100,7 @@ stop_button.on_clicked(stop_animation)
 
 # Create animation
 # The FuncAnimation function creates an animation by repeatedly calling a function (in this case, animate)
-ani = animation.FuncAnimation(fig, animate, init_func=init, frames=frames, interval=interval_millisec, blit=True)
+ani = animation.FuncAnimation(fig, animate, init_func=init, frames=500, interval=20, blit=True)
 
 # Connect the slider to the update function
 #slider.on_changed(update)
