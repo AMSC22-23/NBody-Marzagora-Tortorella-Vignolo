@@ -15,12 +15,12 @@ std::vector<Particle> generateRandomParticles(int N, int posBoundary = 100, int 
     // Initialize random seed
     srand(time(0));
 
+    bool uniquePosition = false;
+    double x, y;
+    int r;
+
     for (int i = 0; i < N; i++) {
-
-        bool uniquePosition = false;
-        double x, y;
-        int r;
-
+        uniquePosition = false;
         while (!uniquePosition) {
             uniquePosition = true;
 
