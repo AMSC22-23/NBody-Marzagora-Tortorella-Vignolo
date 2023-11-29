@@ -7,8 +7,60 @@
 #include <cmath>
 #include <fstream>
 
-// TODO: sistemare generazione quando stalla
+// Function that randomly generates particles:
 std::vector<Particle> generateRandomParticles(int N, int minMass = 1, int maxMass = 99, int posBoundary = 100, int maxVx = 100, int maxVy = 100, int minRadius = 0, int maxRadius = 15) {
+    std::vector<Particle> particles;
+
+    // Initialize random seed
+    srand(time(0));
+
+    for (int i = 0; i < N; i++) {
+
+        bool uniquePosition = false;
+        double x, y;
+
+        while (!uniquePosition) {
+            uniquePosition = true;
+
+            // Generate random position between -100 and 100
+            x = -posBoundary + static_cast<double>(rand()) / (static_cast<double>(RAND_MAX/(2*posBoundary)));
+            y = -posBoundary + static_cast<double>(rand()) / (static_cast<double>(RAND_MAX/(2*posBoundary)));
+
+            // Check if the position is unique
+            for (const Particle& p : particles) {
+                if (p.getPos()[0] == x && p.getPos()[1] == y) {
+                    uniquePosition = false;
+                    break;
+                }
+            }
+        }
+
+        // Generate random radius between 0 and 
+        int r = rand() % (maxRadius - minRadius + 1) + minRadius;
+
+        // Generate random mass between 1 and 100
+        double mass = minMass + static_cast<double>(rand()) / (static_cast<double>(RAND_MAX/(maxMass-1)));
+        double charge = 0.0;
+
+        // Generate random radius between 1 and 10
+        double radius = 1 + static_cast<double>(rand()) / (static_cast<double>(RAND_MAX/(10-1)));
+
+        // Generate random velocity between -100 and 100
+        double vx = -maxVx + static_cast<double>(rand()) / (static_cast<double>(RAND_MAX/(2*maxVx)));
+        double vy = -maxVy + static_cast<double>(rand()) / (static_cast<double>(RAND_MAX/(2*maxVy)));
+
+        // Create a new particle with the random mass, position, and velocity
+        Particle p(i, mass, charge, x, y, vx, vy, r);
+
+        // Add the particle to the vector
+        particles.push_back(p);
+    }
+
+    return particles;
+}
+
+// TODO: sistemare generazione quando stalla
+std::vector<Particle> generateRandomParticles_v2(int N, int minMass = 1, int maxMass = 99, int posBoundary = 100, int maxVx = 100, int maxVy = 100, int minRadius = 0, int maxRadius = 15) {
     std::vector<Particle> particles;
 
     // Initialize random seed
@@ -73,11 +125,11 @@ int main() {
     std::vector<Particle> particles;
     CustomForce f;
 
-    std::ofstream file("../graphics/coordinates.txt");
+    std::ofstream file("coordinates.txt");
 
     //generate 100 particles
     int n = 50;
-    particles = generateRandomParticles(n);
+    particles = generateRandomParticles_v2(n, posBoundary = dim);
 
     // Print the initial state of the particles
     std::cout << "Initial state:\n";
