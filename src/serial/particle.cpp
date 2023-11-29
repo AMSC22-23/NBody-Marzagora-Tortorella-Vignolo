@@ -103,9 +103,13 @@ void Particle::setVel(double vx, double vy){
     vel[1] = vy;
 }
 
+void Particle::setMass(double m){
+    mass = m;
+}
+
 void Particle::manage_collision(Particle &p, double dim){
     if(dim){
-        //elastic collision with wall
+        //manages collision with the borders of the simulation (visual purposes only)
         if(pos[0] + radius > dim || pos[0] - radius < -dim){
             vel[0] = -vel[0];
         }
@@ -113,15 +117,28 @@ void Particle::manage_collision(Particle &p, double dim){
             vel[1] = -vel[1];
         }
     }
-    else{
+    else{ //manages collision between particles
         //elastic collision
-        double xvel_prev, yvel_prev, xvel_new, yvel_new;
-        xvel_prev = vel[0];
-        yvel_prev = vel[1];
-        vel[0] = ((mass - p.getMass())*vel[0]+2*p.getMass()*p.getVel()[0]) / (mass + p.getMass());
-        vel[1] = ((mass - p.getMass())*vel[1]+2*p.getMass()*p.getVel()[1]) / (mass + p.getMass());
-        xvel_new = ((p.getMass() - mass)*p.getVel()[0]+2*mass*xvel_prev) / (mass + p.getMass());
-        yvel_new = ((p.getMass() - mass)*p.getVel()[1]+2*mass*yvel_prev) / (mass + p.getMass());
-        p.setVel(xvel_new, yvel_new);
+        
+        //if(elastic){
+            double xvel_prev, yvel_prev, xvel_new, yvel_new;
+            xvel_prev = vel[0];
+            yvel_prev = vel[1];
+            vel[0] = ((mass - p.getMass())*vel[0]+2*p.getMass()*p.getVel()[0]) / (mass + p.getMass());
+            vel[1] = ((mass - p.getMass())*vel[1]+2*p.getMass()*p.getVel()[1]) / (mass + p.getMass());
+            xvel_new = ((p.getMass() - mass)*p.getVel()[0]+2*mass*xvel_prev) / (mass + p.getMass());
+            yvel_new = ((p.getMass() - mass)*p.getVel()[1]+2*mass*yvel_prev) / (mass + p.getMass());
+            p.setVel(xvel_new, yvel_new);
+        /*} else {
+            //inelastic collision -- da rivedere 
+            double xvel_prev, yvel_prev, xvel_new, yvel_new;
+            vel[0] = (mass * vel[0] + p.getMass() * p.getVel()[0]) / (mass + p.getMass());
+            vel[1] = (mass * vel[1] + p.getMass() * p.getVel()[1]) / (mass + p.getMass());
+            mass = mass + p.getMass();
+            radius = radius + p.getRadius(); 
+            p.setMass(0.0);
+
+           */ 
+        //}
     }
 }
