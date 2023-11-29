@@ -19,26 +19,27 @@ std::vector<Particle> generateRandomParticles(int N, int posBoundary = 100, int 
 
         bool uniquePosition = false;
         double x, y;
+        int r;
 
         while (!uniquePosition) {
             uniquePosition = true;
 
-            // Generate random position between -100 and 100
-            x = -posBoundary + static_cast<double>(rand()) / (static_cast<double>(RAND_MAX/(2*posBoundary)));
-            y = -posBoundary + static_cast<double>(rand()) / (static_cast<double>(RAND_MAX/(2*posBoundary)));
+            // Generate random radius between 0 and 
+            r = rand() % (maxRadius - minRadius + 1) + minRadius;
 
-            // Check if the position is unique
+            // Generate random position between -posBoundary+r and +posBoundary-r
+            x = -posBoundary + r + static_cast<double>(rand()) / (static_cast<double>(RAND_MAX/(2*posBoundary - 2*r)));
+            y = -posBoundary + r + static_cast<double>(rand()) / (static_cast<double>(RAND_MAX/(2*posBoundary - 2*r)));
+
+            // Check if the position is unique and that the particles are not overlapping
             for (const Particle& p : particles) {
                 double distance = sqrt(pow(p.getPos()[0] - x, 2) + pow(p.getPos()[1] - y, 2));
-                if (distance < p.getRadius() + maxRadius) {
+                if (distance < p.getRadius() + r) {
                     uniquePosition = false;
                     break;
                 }
             }
         }
-
-        // Generate random radius between 0 and 
-        int r = rand() % (maxRadius - minRadius + 1) + minRadius;
 
         // Generate random mass between 1 and 100
         double mass = minMass + static_cast<double>(rand()) / (static_cast<double>(RAND_MAX/(maxMass-1)));
