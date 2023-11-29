@@ -15,6 +15,7 @@ frames = int(duration/(interval_millisec*0.001)); # calculate the number of fram
 # Open the file for reading
 with open('coordinates.txt', 'r') as f:
     num_particles = int(next(f).strip())
+    dim = int(next(f).strip())
     # Read the radius values from the first N lines of the file
     radius = [float(next(f).strip()) for _ in range(num_particles)]
     # Read the remaining lines of the file to get the particle coordinates
@@ -59,8 +60,8 @@ def init():
 # slider = Slider(ax_slider, 'Time', 0, frames, valinit=0, valstep=1)
 
 # Set the limits of x and y axes
-ax.set_xlim([-150, 150])
-ax.set_ylim([-150, 150])
+ax.set_xlim([-dim, dim])
+ax.set_ylim([-dim, dim])
 
 # Animation function
 # This function is called for each frame of the animation
@@ -100,7 +101,7 @@ stop_button.on_clicked(stop_animation)
 
 # Create animation
 # The FuncAnimation function creates an animation by repeatedly calling a function (in this case, animate)
-ani = animation.FuncAnimation(fig, animate, init_func=init, frames=500, interval=20, blit=True)
+ani = animation.FuncAnimation(fig, animate, init_func=init, frames=1000, interval=10, blit=True)
 
 # Connect the slider to the update function
 #slider.on_changed(update)
