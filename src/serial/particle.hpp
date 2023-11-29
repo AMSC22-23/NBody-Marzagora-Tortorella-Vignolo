@@ -55,6 +55,8 @@ class Particle {
         void manage_collision(Particle &p, double dim);
         //method that set the velocity of the particle
         void setVel(double vx, double vy);
+        //method that sets the mass of the particle (only to manage the inelastic collisions)
+        void setMass(double m);
 
         ~Particle(){}
     private:
