@@ -5,10 +5,11 @@
 #include <ctime>
 #include <iostream>
 #include <cmath>
+#include <string>
 #include <fstream>
 
 // TODO: sistemare generazione quando stalla
-std::vector<Particle> generateRandomParticles(int N, int minMass = 1, int maxMass = 99, int posBoundary = 100, int maxVx = 100, int maxVy = 100, int minRadius = 0, int maxRadius = 15) {
+std::vector<Particle> generateRandomParticles(int N, int posBoundary = 100, int minMass = 1, int maxMass = 99, int maxVx = 100, int maxVy = 100, int minRadius = 0, int maxRadius = 15) {
     std::vector<Particle> particles;
 
     // Initialize random seed
@@ -62,53 +63,46 @@ std::vector<Particle> generateRandomParticles(int N, int minMass = 1, int maxMas
 
 
 int main() {
-    // Define the gravitational constant and time step
-    const double delta_t = 0.01; // in seconds
-    const double dim = 250;
 
-    // number of iteration
-    int it = 1000; 
-
-    // Create a vector of particles
-    std::vector<Particle> particles;
+    // Definition of variables
+    const double delta_t = 0.01; // [sec]
+    int dim = 250; // Dimension of the simulation area
+    int it = 1000; // Number of iteration
+    int n = 50; // Number of particles
+    std::vector<Particle> particles;  // Create a vector of particles
     CustomForce f;
-
-    std::ofstream file("../graphics/coordinates.txt");
-
-    //generate 100 particles
-    int n = 50;
-    particles = generateRandomParticles(n);
+    std::string fileName = "../graphics/coordinates.txt";
+    std::ofstream file(fileName); // Open file
+    
+    // Generation of n random particles
+    particles  = generateRandomParticles(n, dim);
 
     // Print the initial state of the particles
     std::cout << "Initial state:\n";
     if (file.is_open()) {
+
+        // Write on file the total number of particles
         file << n << std::endl;
-        for (const Particle& p : particles) {
-        p.print_states();
-        // Write on file the radius of the particles
-        if (file.is_open()) {
+
+        // Write on file the size of the area of the simulation
+        file << dim << std::endl;
+
+        // Write on file the radius of the particles and the initial state
+        for (const Particle& p : particles) 
             file << p.getRadius() << std::endl;
-        } else {
-            std::cout << "Unable to open file";
-        }
+        for (const Particle& p : particles) {
+            file << p.getId() << "," << p.getPos()[0] << "," <<  p.getPos()[1] << std::endl;
     }
     }else {
         std::cout << "Unable to open file";
     }
 
-    for (const Particle& p : particles) {
-        // Write on file the initial state
-        if (file.is_open()) {
-            file << p.getId() << "," << p.getPos()[0] << "," <<  p.getPos()[1] << std::endl;
-        } else {
-            std::cout << "Unable to open file";
-        }
-    }
-
+    // Start of the simulation
     for (int z = 0; z < it; ++z){
-        for (int i = 0; i < particles.size(); i++) {
+        for (int i = 0; i < particles.size(); ++i) {
             Particle &q = particles[i];
-            // check if the particle hits the bounday
+
+            // Check if the particle hits the bounday
             if(q.getPos()[0]+ q.getRadius() > dim || 
                 q.getPos()[0] - q.getRadius() < -dim ||
                 q.getPos()[1] + q.getRadius()> dim || 
@@ -120,20 +114,19 @@ int main() {
 
                 // check collisions between particles
                 if(q.square_distance(k) < ((q.getRadius() + k.getRadius())*(q.getRadius() + k.getRadius()))){
-                    // call the collision method
+
+                    // Call the collision method
                     q.manage_collision(k, 0.0);
                 }
-
-                std::array<double,2> force_qk;
-                //force_qk = f.calculateForce(k,q);
+                // Add force
                 q.addForce(k, f);
             }
             z==it-1? q.update(delta_t):q.update_and_reset(delta_t);
         }
         
+        // Write on file the updates after delta_t
         for (int i = 0; i < particles.size(); i++) {
             Particle &q = particles[i];
-            // Write on file the updates after delta_t
             if (file.is_open()) {
                 file << q.getId() << "," << q.getPos()[0] << "," <<  q.getPos()[1] << std::endl;
             } else {
@@ -150,7 +143,6 @@ int main() {
 
         std::cout << "Distance from origin: " << sqrt(pow(p.getPos()[0],2) + pow(p.getPos()[1],2)) << "\n";
     }
-
     file.close();
     return 0;
 }
