@@ -75,7 +75,7 @@ std::vector<Particle<Dimension>> generateRandomParticles(int N, int posBoundary 
 
         // Create a new particle with the random value of property, position, and velocity
         // workaround, need better constructor for `Particle`
-        Particle<Dimension> p(i, property, x, y, vel[0], vel[1], r, type);
+        Particle<Dimension> p(i, property, pos, vel, r, type);
 
         // Add the particle to the vector
         particles.push_back(p);

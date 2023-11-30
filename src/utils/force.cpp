@@ -1,7 +1,7 @@
-#include "force.hpp"
-#include "particle.hpp"
+//#include "force.hpp"
+//#include "particle.hpp"
 
-template<size_t Dimension>
+/*template<size_t Dimension>
 std::array<double,Dimension> GravitationalForce<Dimension>::calculateForce(const Particle<Dimension> &k, const Particle<Dimension> &q) const{
     const auto& k_pos = k.getPos();
     const auto& q_pos = q.getPos();
@@ -130,7 +130,8 @@ std::array<double,Dimension> RepulsiveForce<Dimension>::calculateForce(const Par
 
     return force_qk;
 
-}
+}*/
+
 /*
 // Example of usage
 int main() {
@@ -147,4 +148,4 @@ int main() {
 */
 
 // Explicit instantiation, see `Particle.cpp` for the explaination
-template class CustomForce<2>;
+//template class CustomForce<2>;

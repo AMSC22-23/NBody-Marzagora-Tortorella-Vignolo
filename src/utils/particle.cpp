@@ -1,9 +1,9 @@
 // A class for a particle in an n-body simulation
-#include "force.hpp"
-#include "particle.hpp"
-#include <cmath>
+//#include "force.hpp"
+//#include "particle.hpp"
+//#include <cmath>
 
-template<size_t Dimension>
+/*template<size_t Dimension>
 double Particle<Dimension>::getProperty() const {
     return property;
 }
@@ -162,8 +162,8 @@ void Particle<Dimension>::manage_collision(Particle<Dimension> &p, double dim){
 
            */ 
         //}
-    }
-}
+/*    }
+}*/
 
 // the problem with the linker is the following:
 // template code is not a real recipe for code until you specify the type
@@ -181,4 +181,4 @@ void Particle<Dimension>::manage_collision(Particle<Dimension> &p, double dim){
 //    This is called explicit template instantiation (see also https://en.cppreference.com/w/cpp/language/class_template)
 //    It has the following syntax
 
-template class Particle<2>;
+//template class Particle<2>;
