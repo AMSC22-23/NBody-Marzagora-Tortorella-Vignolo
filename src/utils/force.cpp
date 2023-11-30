@@ -14,7 +14,7 @@ std::array<double,2> GravitationalForce::calculateForce(const Particle &k, const
     double dist = std::hypot(x_diff, y_diff);
     double dist_cubed = dist * dist * dist;
 
-    double gravF = G * q.getMass() * k.getMass() / dist_cubed;
+    double gravF = G * q.getProperty() * k.getProperty() / dist_cubed;
 
     std::array<double, 2> force_qk;
     force_qk[0] = gravF * x_diff;
@@ -35,7 +35,7 @@ std::array<double,2> CustomForce::calculateForce(const Particle &k, const Partic
     double dist = std::hypot(x_diff, y_diff);
     double dist_cubed = dist * dist * dist;
 
-    double gravF = G * q.getMass() * k.getMass() / dist_cubed;
+    double gravF = G * q.getProperty() * k.getProperty() / dist_cubed;
 
     std::array<double, 2> force_qk;
     force_qk[0] = gravF * x_diff;
@@ -56,7 +56,7 @@ std::array<double,2> CoulombForce::calculateForce(const Particle &k, const Parti
     double dist = std::hypot(x_diff, y_diff);
     double dist_cubed = dist * dist * dist;
 
-    double coulF = K * q.getCharge() * k.getCharge() / dist_cubed;
+    double coulF = K * q.getProperty() * k.getProperty() / dist_cubed;
 
     std::array<double, 2> force_qk;
     force_qk[0] =  coulF * x_diff;
