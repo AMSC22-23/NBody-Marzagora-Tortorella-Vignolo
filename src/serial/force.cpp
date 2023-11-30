@@ -1,102 +1,132 @@
 #include "force.hpp"
 #include "particle.hpp"
 
-std::array<double,2> GravitationalForce::calculateForce(const Particle &k, const Particle &q) const{
+template<size_t Dimension>
+std::array<double,Dimension> GravitationalForce<Dimension>::calculateForce(const Particle<Dimension> &k, const Particle<Dimension> &q) const{
     const auto& k_pos = k.getPos();
     const auto& q_pos = q.getPos();
 
-    double x_diff = k_pos[0] - q_pos[0];
-    double y_diff = k_pos[1] - q_pos[1];
+    //double x_diff = k_pos[0] - q_pos[0];
+    //double y_diff = k_pos[1] - q_pos[1];
 
-   /*double x_diff = k.getPos()[0] - q.getPos()[0];
-    double y_diff = k.getPos()[1] - q.getPos()[1];
-    double dist = sqrt(x_diff * x_diff + y_diff * y_diff);*/
-    double dist = std::hypot(x_diff, y_diff);
+    std::array<double, Dimension> pos_diff;
+    for(size_t i = 0; i < Dimension; ++i) pos_diff[i] = k_pos[i] - q_pos[i];
+
+    //double dist = std::hypot(x_diff, y_diff);
+    double dist = 0.0;
+    for(size_t i = 0; i < Dimension; ++i) dist = pos_diff[i] * pos_diff[i] + dist;
     double dist_cubed = dist * dist * dist;
 
     double gravF = G * q.getMass() * k.getMass() / dist_cubed;
 
-    std::array<double, 2> force_qk;
-    force_qk[0] = gravF * x_diff;
-    force_qk[1] = gravF * y_diff;
+    std::array<double, Dimension> force_qk;
+    //force_qk[0] = gravF * x_diff;
+    //force_qk[1] = gravF * y_diff;
+
+    for(size_t i = 0; i < Dimension; ++i) force_qk[i] = pos_diff[i];
+
     return force_qk; 
 }
 
-std::array<double,2> CustomForce::calculateForce(const Particle &k, const Particle &q) const{
+template<size_t Dimension>
+std::array<double,Dimension> CustomForce<Dimension>::calculateForce(const Particle<Dimension> &k, const Particle<Dimension> &q) const{
     const auto& k_pos = k.getPos();
     const auto& q_pos = q.getPos();
 
-    double x_diff = k_pos[0] - q_pos[0];
-    double y_diff = k_pos[1] - q_pos[1];
+    //double x_diff = k_pos[0] - q_pos[0];
+    //double y_diff = k_pos[1] - q_pos[1];
 
-   /*double x_diff = k.getPos()[0] - q.getPos()[0];
-    double y_diff = k.getPos()[1] - q.getPos()[1];
-    double dist = sqrt(x_diff * x_diff + y_diff * y_diff);*/
-    double dist = std::hypot(x_diff, y_diff);
+    std::array<double, Dimension> pos_diff;
+    for(size_t i = 0; i < Dimension; ++i) pos_diff[i] = k_pos[i] - q_pos[i];
+
+
+    //double dist = std::hypot(x_diff, y_diff);
+    double dist = 0.0;
+    for(size_t i = 0; i < Dimension; ++i) dist = pos_diff[i] * pos_diff[i] + dist;
     double dist_cubed = dist * dist * dist;
 
     double gravF = G * q.getMass() * k.getMass() / dist_cubed;
 
-    std::array<double, 2> force_qk;
-    force_qk[0] = gravF * x_diff;
-    force_qk[1] = gravF * y_diff;
+    std::array<double, Dimension> force_qk;
+    //force_qk[0] = gravF * x_diff;
+    //force_qk[1] = gravF * y_diff;
+    for(size_t i = 0; i < Dimension; ++i) force_qk[i] = pos_diff[i];
+
     return force_qk; 
 }
 
-std::array<double,2> CoulombForce::calculateForce(const Particle &k, const Particle &q) const{
-    /*double x_diff = k.getPos()[0] - q.getPos()[0];
-    double y_diff = k.getPos()[1] - q.getPos()[1];
-    double dist = sqrt(x_diff * x_diff + y_diff * y_diff);*/
+template<size_t Dimension>
+std::array<double,Dimension> CoulombForce<Dimension>::calculateForce(const Particle<Dimension> &k, const Particle<Dimension> &q) const{
     const auto& k_pos = k.getPos();
     const auto& q_pos = q.getPos();
 
-    double x_diff = k_pos[0] - q_pos[0];
-    double y_diff = k_pos[1] - q_pos[1];
+    //double x_diff = k_pos[0] - q_pos[0];
+   // double y_diff = k_pos[1] - q_pos[1];
 
-    double dist = std::hypot(x_diff, y_diff);
+    std::array<double, Dimension> pos_diff;
+    for(size_t i = 0; i < Dimension; ++i) pos_diff[i] = k_pos[i] - q_pos[i];
+
+    //double dist = std::hypot(x_diff, y_diff);
+    double dist = 0.0;
+    for(size_t i = 0; i < Dimension; ++i) dist = pos_diff[i] * pos_diff[i] + dist;
     double dist_cubed = dist * dist * dist;
 
     double coulF = K * q.getCharge() * k.getCharge() / dist_cubed;
 
-    std::array<double, 2> force_qk;
-    force_qk[0] =  coulF * x_diff;
-    force_qk[1] = coulF * y_diff;
+    std::array<double, Dimension> force_qk;
+    //force_qk[0] =  coulF * x_diff;
+    //force_qk[1] = coulF * y_diff;
+    for(size_t i = 0; i < Dimension; ++i) force_qk[i] = coulF * pos_diff[i];
 
     return force_qk;
 }
 
-std::array<double,2> NuclearForce::calculateForce(const Particle &k, const Particle &q) const {
+template<size_t Dimension>
+std::array<double,Dimension> NuclearForce<Dimension>::calculateForce(const Particle<Dimension> &k, const Particle<Dimension> &q) const {
     const auto& k_pos = k.getPos();
     const auto& q_pos = q.getPos();
 
-    double x_diff = k_pos[0] - q_pos[0];
-    double y_diff = k_pos[1] - q_pos[1];
+    //double x_diff = k_pos[0] - q_pos[0];
+    //double y_diff = k_pos[1] - q_pos[1];
 
-    double dist = std::hypot(x_diff, y_diff);
+    std::array<double, Dimension> pos_diff;
+    for(size_t i = 0; i < Dimension; ++i) pos_diff[i] = k_pos[i] - q_pos[i];
+
+    //double dist = std::hypot(x_diff, y_diff);
+    double dist = 0.0;
+    for(size_t i = 0; i < Dimension; ++i) dist = pos_diff[i] * pos_diff[i] + dist;
 
     double nukeF = -std::exp(-dist/r0)/dist;
 
-    std::array<double, 2> force_qk;
-    force_qk[0] = nukeF * x_diff / dist;
-    force_qk[1] = nukeF * y_diff / dist;
+    std::array<double, Dimension> force_qk;
+    //force_qk[0] = nukeF * x_diff / dist;
+    //force_qk[1] = nukeF * y_diff / dist;
+    for(size_t i = 0; i < Dimension; ++i) force_qk[i] = nukeF * pos_diff[i];
 
     return force_qk;
 }
 
-std::array<double,2> RepulsiveForce::calculateForce(const Particle &k, const Particle &q) const{
+template<size_t Dimension>
+std::array<double,Dimension> RepulsiveForce<Dimension>::calculateForce(const Particle<Dimension> &k, const Particle<Dimension> &q) const{
     const auto& k_pos = k.getPos();
     const auto& q_pos = q.getPos();
 
-    double x_diff = k_pos[0] - q_pos[0];
-    double y_diff = k_pos[1] - q_pos[1];
+    //double x_diff = k_pos[0] - q_pos[0];
+    //double y_diff = k_pos[1] - q_pos[1];
 
-    double dist = std::hypot(x_diff, y_diff);
+    std::array<double, Dimension> pos_diff;
+    for(size_t i = 0; i < Dimension; ++i) pos_diff[i] = k_pos[i] - q_pos[i];
+
+    //double dist = std::hypot(x_diff, y_diff);
+    double dist = 0.0;
+    for(size_t i = 0; i < Dimension; ++i) dist = pos_diff[i] * pos_diff[i] + dist;
 
     double repF = kp / dist;
     
-    std::array<double, 2> force_qk;
-    force_qk[0] = repF * x_diff / dist;
-    force_qk[1] = repF * x_diff / dist;
+    std::array<double, Dimension> force_qk;
+    //force_qk[0] = repF * x_diff / dist;
+    //force_qk[1] = repF * x_diff / dist;
+    for(size_t i = 0; i < Dimension; ++i) force_qk[i] = repF * pos_diff[i] / dist;
 
     return force_qk;
 
