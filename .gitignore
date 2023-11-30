@@ -1,0 +1,6 @@
+# do not put the executable in the repos
+# you can exclude all the file with name `main`
+**/main
+# or all the files that have `.out` extension
+*.out
+# please remove the currently present executables

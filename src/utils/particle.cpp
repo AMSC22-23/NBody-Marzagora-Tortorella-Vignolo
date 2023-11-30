@@ -3,7 +3,8 @@
 #include "particle.hpp"
 #include <cmath>
 
-double Particle::getProperty() const {
+template<size_t Dimension>
+double Particle<Dimension>::getProperty() const {
     return property;
 }
 
@@ -81,7 +82,8 @@ void Particle<Dimension>::update(double delta_t) {
     vel[1] += (force[1] / property) * delta_t;
 }
 
-void Particle::update_and_reset(const double delta_t) {
+template<size_t Dimension>
+void Particle<Dimension>::update_and_reset(const double delta_t) {
     // Euler integration for position and velocity update
     //pos[0] += vel[0] * delta_t;
     //pos[1] += vel[1] * delta_t;
@@ -109,18 +111,21 @@ double Particle<Dimension>::getRadius() const{
 
 //not to sure about this, maybe it's better to take it as input
 //depends on the interactions (ask!!!)
-bool Particle::getType() const{
+template<size_t Dimension>
+bool Particle<Dimension>::getType() const{
     return type;
 }
 
+// pass by const reference, not copy!
 template<size_t Dimension> 
-void Particle<Dimension>::setVel(std::array<double, Dimension> v){ //original method took as arguments (double vx, double vy)
+void Particle<Dimension>::setVel(const std::array<double, Dimension> &v){ //original method took as arguments (double vx, double vy)
     //vel[0] = vx;
     //vel[1] = vy;
     for(size_t i=0; i < Dimension; ++i) vel[i] = v[i];
 }
 
-void Particle::setProperty(double p){
+template<size_t Dimension> 
+void Particle<Dimension>::setProperty(double p){
     property = p;
 }
 
@@ -159,3 +164,21 @@ void Particle<Dimension>::manage_collision(Particle<Dimension> &p, double dim){
         //}
     }
 }
+
+// the problem with the linker is the following:
+// template code is not a real recipe for code until you specify the type
+// thus, even if in the cpp file you code function definitions, the compiler
+// cannot create object code for the file. Thas is, it is not possible to create
+// a `Particle.o` until the dimension is specified
+// Since each translation unit is treated independently from the others, 
+// the information from the main file does not "come back" to this file.
+// There are two possible solutions:
+// 1. Write everything in only the header file, do not use source files with templates.
+//    This is usually what is done with template libraries as Eigen.
+//    This solves the problem because in the main you include `Particles.hpp`, so the compiler
+//    can specialize the template since it has the full recipe in the header.
+// 2. Tell the compiler explicitly to produce the object code
+//    This is called explicit template instantiation (see also https://en.cppreference.com/w/cpp/language/class_template)
+//    It has the following syntax
+
+template class Particle<2>;

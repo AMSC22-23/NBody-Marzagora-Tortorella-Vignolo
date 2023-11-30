@@ -13,6 +13,8 @@ template<size_t Dimension>
 class Particle {
     public:
         // A constructor that initializes the mass, position, and velocity of the particle
+        // This constructor works only in 2D, but it should also work in 3D
+        // a possible solution is to pass an array with the coordinates and one with the velocities
         Particle(int id, double p, double x, double y, double vx, double vy, double radius, bool type)
             : id(id), property(p), pos{x, y}, vel{vx, vy}, force{0.0, 0.0}, type(type), radius(radius) {}
 
@@ -48,7 +50,8 @@ class Particle {
         //method that manage collisions
         void manage_collision(Particle<Dimension> &p, double dim);
         //method that set the velocity of the particle
-        void setVel(double vx, double vy);
+        // pass by const reference, not copy!
+        void setVel(const std::array<double, Dimension> &);
         //method that sets the property of the particle (only to manage the inelastic collisions)
         void setProperty(double m);
 

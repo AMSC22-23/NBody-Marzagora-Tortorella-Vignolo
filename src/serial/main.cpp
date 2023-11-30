@@ -1,6 +1,8 @@
 #include <vector>
-#include "../utils/particle.hpp" 
-#include "../utils/force.hpp"
+// include should have only the name
+// add "-I../utils" to the compile flags 
+#include "particle.hpp" 
+#include "force.hpp"
 #include <cstdlib> 
 #include <ctime>
 #include <iostream>
@@ -9,8 +11,14 @@
 #include <fstream>
 
 // TODO: sistemare generazione quando stalla
-std::vector<Particle> generateRandomParticles(int N, int posBoundary = 100, int minProperty = 1, int maxProperty = 99, int maxVx = 100, int maxVy = 100, int minRadius = 0, int maxRadius = 15, bool type = false) {
-    std::vector<Particle> particles;
+// `Particle` is a template class, it does not name a "concrete" type
+// until you specify its dimension, so you have two options:
+// 1. define the function as `std::vector<Particle<2>> generateRandomParticles(...)`
+// or better
+// 2. make the function a template, as follows
+template<size_t Dimension>
+std::vector<Particle<Dimension>> generateRandomParticles(int N, int posBoundary = 100, int minProperty = 1, int maxProperty = 99, int maxVx = 100, int maxVy = 100, int minRadius = 0, int maxRadius = 15, bool type = false) {
+    std::vector<Particle<Dimension>> particles;
 
     // Initialize random seed
     srand(time(0));
@@ -50,6 +58,8 @@ std::vector<Particle> generateRandomParticles(int N, int posBoundary = 100, int 
         }
 
         // Generate random value of property between 1 and 100
+        // should use the `random` library instead of `rand()`
+        // see: https://en.cppreference.com/w/cpp/numeric/random
         double property = minProperty + static_cast<double>(rand()) / (static_cast<double>(RAND_MAX/(maxProperty-1)));
 
         // Generate random radius between 1 and 10
@@ -64,7 +74,8 @@ std::vector<Particle> generateRandomParticles(int N, int posBoundary = 100, int 
             vel[i] = -maxVy + static_cast<double>(rand()) / (static_cast<double>(RAND_MAX/(2*maxVy)));
 
         // Create a new particle with the random value of property, position, and velocity
-        Particle p(i, property, x, y, vx, vy, r, type);
+        // workaround, need better constructor for `Particle`
+        Particle<Dimension> p(i, property, x, y, vel[0], vel[1], r, type);
 
         // Add the particle to the vector
         particles.push_back(p);

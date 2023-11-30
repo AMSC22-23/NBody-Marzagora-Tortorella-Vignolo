@@ -145,3 +145,6 @@ int main() {
     return 0;
 }
 */
+
+// Explicit instantiation, see `Particle.cpp` for the explaination
+template class CustomForce<2>;
