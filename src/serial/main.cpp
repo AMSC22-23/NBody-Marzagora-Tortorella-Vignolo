@@ -9,9 +9,8 @@
 #include <fstream>
 
 // TODO: sistemare generazione quando stalla
-template<size_t Dimension>
-std::vector<Particle<Dimension>> generateRandomParticles(int N, int posBoundary = 100, int minMass = 1, int maxMass = 99, int maxVx = 100, int maxVy = 100, int minRadius = 0, int maxRadius = 15) {
-    std::vector<Particle<Dimension>> particles;
+std::vector<Particle> generateRandomParticles(int N, int posBoundary = 100, int minProperty = 1, int maxProperty = 99, int maxVx = 100, int maxVy = 100, int minRadius = 0, int maxRadius = 15, bool type = false) {
+    std::vector<Particle> particles;
 
     // Initialize random seed
     srand(time(0));
@@ -50,9 +49,8 @@ std::vector<Particle<Dimension>> generateRandomParticles(int N, int posBoundary 
             }
         }
 
-        // Generate random mass between 1 and 100
-        double mass = minMass + static_cast<double>(rand()) / (static_cast<double>(RAND_MAX/(maxMass-1)));
-        double charge = 0.0;
+        // Generate random value of property between 1 and 100
+        double property = minProperty + static_cast<double>(rand()) / (static_cast<double>(RAND_MAX/(maxProperty-1)));
 
         // Generate random radius between 1 and 10
         double radius = 1 + static_cast<double>(rand()) / (static_cast<double>(RAND_MAX/(10-1)));
@@ -65,9 +63,8 @@ std::vector<Particle<Dimension>> generateRandomParticles(int N, int posBoundary 
         //double vy = -maxVy + static_cast<double>(rand()) / (static_cast<double>(RAND_MAX/(2*maxVy)));
             vel[i] = -maxVy + static_cast<double>(rand()) / (static_cast<double>(RAND_MAX/(2*maxVy)));
 
-        // Create a new particle with the random mass, position, and velocity
-        //Particle p(i, mass, charge, x, y, vx, vy, r);
-        Particle p(i, mass, charge, pos, vel, r);
+        // Create a new particle with the random value of property, position, and velocity
+        Particle p(i, property, x, y, vx, vy, r, type);
 
         // Add the particle to the vector
         particles.push_back(p);

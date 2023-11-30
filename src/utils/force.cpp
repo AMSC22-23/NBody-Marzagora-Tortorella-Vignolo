@@ -17,7 +17,7 @@ std::array<double,Dimension> GravitationalForce<Dimension>::calculateForce(const
     for(size_t i = 0; i < Dimension; ++i) dist = pos_diff[i] * pos_diff[i] + dist;
     double dist_cubed = dist * dist * dist;
 
-    double gravF = G * q.getMass() * k.getMass() / dist_cubed;
+    double gravF = G * q.getProperty() * k.getProperty() / dist_cubed;
 
     std::array<double, Dimension> force_qk;
     //force_qk[0] = gravF * x_diff;
@@ -45,7 +45,7 @@ std::array<double,Dimension> CustomForce<Dimension>::calculateForce(const Partic
     for(size_t i = 0; i < Dimension; ++i) dist = pos_diff[i] * pos_diff[i] + dist;
     double dist_cubed = dist * dist * dist;
 
-    double gravF = G * q.getMass() * k.getMass() / dist_cubed;
+    double gravF = G * q.getProperty() * k.getProperty() / dist_cubed;
 
     std::array<double, Dimension> force_qk;
     //force_qk[0] = gravF * x_diff;
@@ -71,7 +71,7 @@ std::array<double,Dimension> CoulombForce<Dimension>::calculateForce(const Parti
     for(size_t i = 0; i < Dimension; ++i) dist = pos_diff[i] * pos_diff[i] + dist;
     double dist_cubed = dist * dist * dist;
 
-    double coulF = K * q.getCharge() * k.getCharge() / dist_cubed;
+    double coulF = K * q.getProperty() * k.getProperty() / dist_cubed;
 
     std::array<double, Dimension> force_qk;
     //force_qk[0] =  coulF * x_diff;

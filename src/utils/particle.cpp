@@ -3,14 +3,8 @@
 #include "particle.hpp"
 #include <cmath>
 
-template<size_t Dimension>
-double Particle<Dimension>::getMass() const {
-    return mass;
-}
-
-template<size_t Dimension>
-double Particle<Dimension>::getCharge() const {
-    return charge;
+double Particle::getProperty() const {
+    return property;
 }
 
 template<size_t Dimension>
@@ -83,27 +77,17 @@ void Particle<Dimension>::update(double delta_t) {
     //pos[0] += vel[0] * delta_t;
     //pos[1] += vel[1] * delta_t;
     
-    // vel[0] += (force[0] / mass) * delta_t;
-    // vel[1] += (force[1] / mass) * delta_t;
-    for(size_t i = 0; i < Dimension; ++i){
-        pos[i] += vel[i] * delta_t;
-        vel[i] += (force[i] / mass) * delta_t;
-    }
+    vel[0] += (force[0] / property) * delta_t;
+    vel[1] += (force[1] / property) * delta_t;
 }
 
-template<size_t Dimension>
-void Particle<Dimension>::update_and_reset(const double delta_t) {
+void Particle::update_and_reset(const double delta_t) {
     // Euler integration for position and velocity update
     //pos[0] += vel[0] * delta_t;
     //pos[1] += vel[1] * delta_t;
     
-    //vel[0] += (force[0] / mass) * delta_t;
-    //vel[1] += (force[1] / mass) * delta_t;
-
-    for(size_t i = 0; i < Dimension; ++i){
-        pos[i] += vel[i] * delta_t;
-        vel[i] += (force[i] / mass) * delta_t;
-    }
+    vel[0] += (force[0] / property) * delta_t;
+    vel[1] += (force[1] / property) * delta_t;
     resetForce();
 }
 
@@ -111,7 +95,8 @@ template<size_t Dimension>
 void Particle<Dimension>::print_states() const{
     std::cout << "Id: " << id << std::endl;
     std::cout << "Position: " << pos[0] << " " << pos[1] << std::endl;
-    std::cout << "Mass: " << mass << std::endl;
+    (!type? std::cout << "Mass: " : std::cout << "Charge: ");
+    std::cout << property << std::endl;
     std::cout << "Force: " << force[0] << " " << force[1] << std::endl;
     std::cout << "Velocity: " << vel[0] << " " << vel[1] << std::endl;
 }
@@ -124,10 +109,8 @@ double Particle<Dimension>::getRadius() const{
 
 //not to sure about this, maybe it's better to take it as input
 //depends on the interactions (ask!!!)
-template<size_t Dimension>
-bool Particle<Dimension>::returnType() const{
-    if (charge != 0.0) return true; 
-    else return false;
+bool Particle::getType() const{
+    return type;
 }
 
 template<size_t Dimension> 
@@ -137,9 +120,8 @@ void Particle<Dimension>::setVel(std::array<double, Dimension> v){ //original me
     for(size_t i=0; i < Dimension; ++i) vel[i] = v[i];
 }
 
-template<size_t Dimension> 
-void Particle<Dimension>::setMass(double m){
-    mass = m;
+void Particle::setProperty(double p){
+    property = p;
 }
 
 template<size_t Dimension> 
@@ -159,37 +141,20 @@ void Particle<Dimension>::manage_collision(Particle<Dimension> &p, double dim){
             /*double xvel_prev, yvel_prev, xvel_new, yvel_new;
             xvel_prev = vel[0];
             yvel_prev = vel[1];
-            vel[0] = ((mass - p.getMass())*vel[0]+2*p.getMass()*p.getVel()[0]) / (mass + p.getMass());
-            vel[1] = ((mass - p.getMass())*vel[1]+2*p.getMass()*p.getVel()[1]) / (mass + p.getMass());
-            xvel_new = ((p.getMass() - mass)*p.getVel()[0]+2*mass*xvel_prev) / (mass + p.getMass());
-            yvel_new = ((p.getMass() - mass)*p.getVel()[1]+2*mass*yvel_prev) / (mass + p.getMass());
-            p.setVel(xvel_new, yvel_new);*/
-
-            std::array<double, Dimension> prev_vel;
-            std::array<double, Dimension> new_vel;
-
-            for(size_t i = 0; i < Dimension; ++i){
-                prev_vel[i] = vel[i];
-            }
-
-            for(size_t i = 0; i < Dimension; ++i){
-                vel[i] = ((mass - p.getMass())*vel[i]+2*p.getMass()*p.getVel()[i]) / (mass + p.getMass());
-            }
-
-            for(size_t i = 0; i < Dimension; ++i){
-                new_vel[i] = ((p.getMass() - mass)*p.getVel()[i]+2*mass*prev_vel[i]) / (mass + p.getMass());
-            }
-
-            p.setVel(new_vel);
-
+            vel[0] = ((property - p.getProperty())*vel[0]+2*p.getProperty()*p.getVel()[0]) / (property + p.getProperty());
+            vel[1] = ((property - p.getProperty())*vel[1]+2*p.getProperty()*p.getVel()[1]) / (property + p.getProperty());
+            xvel_new = ((p.getProperty() - property)*p.getVel()[0]+2*property*xvel_prev) / (property + p.getProperty());
+            yvel_new = ((p.getProperty() - property)*p.getVel()[1]+2*property*yvel_prev) / (property + p.getProperty());
+            p.setVel(xvel_new, yvel_new);
         /*} else {
             //inelastic collision -- da rivedere 
             double xvel_prev, yvel_prev, xvel_new, yvel_new;
-            vel[0] = (mass * vel[0] + p.getMass() * p.getVel()[0]) / (mass + p.getMass());
-            vel[1] = (mass * vel[1] + p.getMass() * p.getVel()[1]) / (mass + p.getMass());
-            mass = mass + p.getMass();
+            vel[0] = (property * vel[0] + p.getProperty() * p.getVel()[0]) / (property + p.getProperty());
+            vel[1] = (property * vel[1] + p.getProperty() * p.getVel()[1]) / (property + p.getProperty());
+            property = property + p.getProperty();
             radius = radius + p.getRadius(); 
-            p.setMass(0.0);
+            p.setproperty(0.0);
+
            */ 
         //}
     }
