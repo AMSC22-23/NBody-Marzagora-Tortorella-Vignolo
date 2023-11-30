@@ -8,22 +8,22 @@ import numpy as np
 from matplotlib.widgets import Button
 import random
 
-duration = 5; # 5 sec = duration of the simulation
-interval_millisec = 50;  # 20 milliseconds = duration of the frame
-frames = int(duration/(interval_millisec*0.001)); # calculate the number of frames given the duration of the simulation
+duration = 5; # duration of the simulation
+interval_millisec = 50;  # [milliseconds], duration of the frame
+frames = int(duration/(interval_millisec*0.001)); # Calculate the number of frames
 
 # Open the file for reading
 with open('coordinates.txt', 'r') as f:
+    # Read the number of the particles to simulate
     num_particles = int(next(f).strip())
+    # Read the dimension of the simulation area
     dim = int(next(f).strip())
-    # Read the radius values from the first N lines of the file
+    # Read the radius values from the next num_particles lines of the file
     radius = [float(next(f).strip()) for _ in range(num_particles)]
-    # Read the remaining lines of the file to get the particle coordinates
-    print(num_particles)
-    # Initialize the vectors of vectors
+    # Initialize the vectors of vectors to store the coordinates of the particles
     x = [[] for _ in range(num_particles)]
     y = [[] for _ in range(num_particles)]
-    # Read the rest of the file line by line
+    # Read the remaining lines of the file to get the particle coordinates
     for line in f:
         # Split the line into id, x, and y
         id, x_val, y_val = map(float, line.strip().split(','))
@@ -34,17 +34,14 @@ with open('coordinates.txt', 'r') as f:
 # Create a new figure and axes
 fig, ax = plt.subplots()
 
-
-# Create a list of Circle objects (one for each body)
+# Create a list of Circle objects (one for each particle)
 circles = [Circle((0, 0), radius[i], color=(random.random(), random.random(), random.random())) for i in range(len(radius))]
 
 # Add the circles to the axes
 for circle in circles:
     ax.add_patch(circle)
 
-t = np.arange(0.0, duration, 0.01)
-
-# Create a list of Line2D objects (one for each body)
+# Create a list of Line2D objects (one for each particle)
 lines = [ax.plot([], [], marker='o', markersize=radius[i])[0] for i in range(len(x))]
 
 # Initialization function
@@ -72,12 +69,12 @@ def animate(i):
     return circles
 
 # Slider update function
-def update(i):
-    print("start from frame:")
-    print(i)
-    for j, line in enumerate(lines):
-        line.set_data(x[j][i:i+1], y[j][i:i+1])
-    return lines
+# def update(i):
+#     print("start from frame:")
+#     print(i)
+#     for j, line in enumerate(lines):
+#         line.set_data(x[j][i:i+1], y[j][i:i+1])
+#     return lines
 
 def reset_animation(event):
     ani.frame_seq = ani.new_frame_seq()
@@ -87,8 +84,6 @@ def stop_animation(event):
     ani.event_source.stop()
 
 def resume_animation(event):
-    # your code here
-    #ani.frame_seq = ani.new_frame_seq()
     ani.event_source.start
 
 reser_button_ax = plt.axes([0.8, 0.9, 0.1, 0.05])
