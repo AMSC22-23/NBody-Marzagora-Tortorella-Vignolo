@@ -9,7 +9,7 @@
 #include <fstream>
 
 // TODO: sistemare generazione quando stalla
-std::vector<Particle> generateRandomParticles(int N, int posBoundary = 100, int minProperty = 1, int maxProperty = 99, int maxVx = 100, int maxVy = 100, int minRadius = 0, int maxRadius = 15, bool type = false) {
+std::vector<Particle> generateRandomParticles(int N, int posBoundary = 100, int minProperty = 1, int maxProperty = 99, int maxVx = 50, int maxVy = 50, int minRadius = 0, int maxRadius = 15, bool type = false) {
     std::vector<Particle> particles;
 
     // Initialize random seed
@@ -66,16 +66,20 @@ int main() {
 
     // Definition of variables
     const double delta_t = 0.01; // [sec]
-    int dim = 250; // Dimension of the simulation area
+    int dim = 600; // Dimension of the simulation area
     int it = 1000; // Number of iteration
     int n = 50; // Number of particles
+    double softening = 0.7; // Softening parameter
     std::vector<Particle> particles;  // Create a vector of particles
     CustomForce f;
     std::string fileName = "../graphics/coordinates.txt";
     std::ofstream file(fileName); // Open file
     
     // Generation of n random particles
-    particles  = generateRandomParticles(n, dim);
+    //particles  = generateRandomParticles(n, dim);
+
+    //call the generateRandomParticles function to generate the particles and put minRadius = 1
+    particles  = generateRandomParticles(n, dim, 1, 99, 50, 50, 1, 10, false);
 
     // Print the initial state of the particles
     std::cout << "Initial state:\n";
@@ -103,7 +107,7 @@ int main() {
             Particle &q = particles[i];
 
             // Check if the particle hits the bounday
-            if(q.getPos()[0]+ q.getRadius() > dim || 
+            if(q.getPos()[0] + q.getRadius() > dim || 
                 q.getPos()[0] - q.getRadius() < -dim ||
                 q.getPos()[1] + q.getRadius()> dim || 
                 q.getPos()[1] - q.getRadius()< -dim){
@@ -113,7 +117,7 @@ int main() {
                 Particle &k = particles[j];
 
                 // check collisions between particles
-                if(q.square_distance(k) < ((q.getRadius() + k.getRadius())*(q.getRadius() + k.getRadius()))){
+                if(q.square_distance(k) < (((q.getRadius() + k.getRadius())*(q.getRadius() + k.getRadius())))*softening){
 
                     // Call the collision method
                     q.manage_collision(k, 0.0);
