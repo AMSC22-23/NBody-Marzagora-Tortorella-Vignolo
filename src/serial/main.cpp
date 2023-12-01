@@ -40,15 +40,15 @@ std::vector<Particle<Dimension>> generateRandomParticles(int N, int posBoundary 
             r = rand() % (maxRadius - minRadius + 1) + minRadius;
 
             // Generate random position between -posBoundary+r and +posBoundary-r
-            //x = -posBoundary + r + static_cast<double>(rand()) / (static_cast<double>(RAND_MAX/(2*posBoundary - 2*r)));
-            //y = -posBoundary + r + static_cast<double>(rand()) / (static_cast<double>(RAND_MAX/(2*posBoundary - 2*r)));
             for(size_t i=0; i<Dimension; ++i)
                 pos[i] = -posBoundary + r + static_cast<double>(rand()) / (static_cast<double>(RAND_MAX/(2*posBoundary - 2*r)));
 
             // Check if the position is unique
             for (const Particle<Dimension> &p : particles) {
-                //TODO: replace method pow(...) with manual multiplication 
-                double distance = sqrt(p.getPos()[0] - pos[0] *  p.getPos()[0] - pos[0] + p.getPos()[1] - pos[1] * p.getPos()[1] - pos[1]);
+
+                for(size_t i = 0; i < Dimension; ++i) power = power + ((p.getPos()[i] - pos[i])*(p.getPos()[i] - pos[i]))
+
+                double distance = sqrt(power);
                 if (distance < p.getRadius() + r) {
                     uniquePosition = false;
                     break;
@@ -64,8 +64,6 @@ std::vector<Particle<Dimension>> generateRandomParticles(int N, int posBoundary 
         std::array<double, Dimension> vel;
         // Generate random velocity between -100 and 100
         for(size_t i=0; i<Dimension; ++i)
-        //double vx = -maxVx + static_cast<double>(rand()) / (static_cast<double>(RAND_MAX/(2*maxVx)));
-        //double vy = -maxVy + static_cast<double>(rand()) / (static_cast<double>(RAND_MAX/(2*maxVy)));
             vel[i] = -maxVy + static_cast<double>(rand()) / (static_cast<double>(RAND_MAX/(2*maxVy)));
 
         // Create a new particle with the random value of property, position, and velocity
