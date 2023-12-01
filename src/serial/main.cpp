@@ -35,9 +35,8 @@ std::vector<Particle<Dimension>> generateRandomParticles(int N, int posBoundary 
 
         while (!uniquePosition) {
             uniquePosition = true;
-
             
-            // Generate random radius between 0 and 
+            // Generate random radius between minRadius and maxRadius
             r = rand() % (maxRadius - minRadius + 1) + minRadius;
 
             // Generate random position between -posBoundary+r and +posBoundary-r
@@ -61,10 +60,8 @@ std::vector<Particle<Dimension>> generateRandomParticles(int N, int posBoundary 
         // should use the `random` library instead of `rand()`
         // see: https://en.cppreference.com/w/cpp/numeric/random
         double property = minProperty + static_cast<double>(rand()) / (static_cast<double>(RAND_MAX/(maxProperty-1)));
-
-        // Generate random radius between 1 and 10
-        double radius = 1 + static_cast<double>(rand()) / (static_cast<double>(RAND_MAX/(10-1)));
-
+        
+        double property = minProperty + static_cast<double>(rand()) / (static_cast<double>(RAND_MAX/(maxProperty-1)));
 
         std::array<double, Dimension> vel;
         // Generate random velocity between -100 and 100
@@ -74,7 +71,6 @@ std::vector<Particle<Dimension>> generateRandomParticles(int N, int posBoundary 
             vel[i] = -maxVy + static_cast<double>(rand()) / (static_cast<double>(RAND_MAX/(2*maxVy)));
 
         // Create a new particle with the random value of property, position, and velocity
-        // workaround, need better constructor for `Particle`
         Particle<Dimension> p(i, property, pos, vel, r, type);
 
         // Add the particle to the vector
@@ -104,7 +100,9 @@ int main() {
     
     //generate 100 particles
     int n = 50;
-    particles = generateRandomParticles<d>(n,dim);
+    particles = generateRandomParticles<d>(n, dim, 1, 99, 50, 50, 1, 10, false);
+
+    double softening = 0.7; // Softening parameter
 
     // Print the initial state of the particles
     std::cout << "Initial state:\n";
@@ -142,10 +140,7 @@ int main() {
             Particle<d> &q = particles[i];
 
             // Check if the particle hits the bounday
-            //if(q.getPos()[0]+ q.getRadius() > dim || 
-            //    q.getPos()[0] - q.getRadius() < -dim ||
-            //    q.getPos()[1] + q.getRadius()> dim || 
-            //    q.getPos()[1] - q.getRadius()< -dim){
+
             if(q.hitsBoundary(dim)){
                 q.manageCollision(q, dim);
             }
@@ -153,7 +148,7 @@ int main() {
                 Particle<d> &k = particles[j];
 
                 // check collisions between particles
-                if(q.squareDistance(k) < ((q.getRadius() + k.getRadius())*(q.getRadius() + k.getRadius()))){
+                if(q.square_distance(k) < (((q.getRadius() + k.getRadius())*(q.getRadius() + k.getRadius())))*softening){
 
                     // Call the collision method
                     q.manageCollision(k, 0.0);
