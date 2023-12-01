@@ -26,6 +26,7 @@ std::vector<Particle<Dimension>> generateRandomParticles(int N, int posBoundary 
     bool uniquePosition = false;
     double x, y;
     int r;
+    double power = 0.0;
 
     for (int i = 0; i < N; i++) {
 
@@ -46,7 +47,8 @@ std::vector<Particle<Dimension>> generateRandomParticles(int N, int posBoundary 
             // Check if the position is unique
             for (const Particle<Dimension> &p : particles) {
 
-                for(size_t i = 0; i < Dimension; ++i) power = power + ((p.getPos()[i] - pos[i])*(p.getPos()[i] - pos[i]))
+                for(size_t i = 0; i < Dimension; ++i) 
+                    power = power + ((p.getPos()[i] - pos[i])*(p.getPos()[i] - pos[i]));
 
                 double distance = sqrt(power);
                 if (distance < p.getRadius() + r) {
