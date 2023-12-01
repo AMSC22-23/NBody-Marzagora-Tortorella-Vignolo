@@ -60,8 +60,6 @@ std::vector<Particle<Dimension>> generateRandomParticles(int N, int posBoundary 
         // should use the `random` library instead of `rand()`
         // see: https://en.cppreference.com/w/cpp/numeric/random
         double property = minProperty + static_cast<double>(rand()) / (static_cast<double>(RAND_MAX/(maxProperty-1)));
-        
-        double property = minProperty + static_cast<double>(rand()) / (static_cast<double>(RAND_MAX/(maxProperty-1)));
 
         std::array<double, Dimension> vel;
         // Generate random velocity between -100 and 100
@@ -148,7 +146,7 @@ int main() {
                 Particle<d> &k = particles[j];
 
                 // check collisions between particles
-                if(q.square_distance(k) < (((q.getRadius() + k.getRadius())*(q.getRadius() + k.getRadius())))*softening){
+                if(q.squareDistance(k) < (((q.getRadius() + k.getRadius())*(q.getRadius() + k.getRadius())))*softening){
 
                     // Call the collision method
                     q.manageCollision(k, 0.0);
