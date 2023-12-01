@@ -88,7 +88,7 @@ std::vector<Particle<Dimension>> generateRandomParticles(int N, int posBoundary 
 int main() {
     // Define of variables
     const double delta_t = 0.01; // in seconds
-    const double dim = 250; // Dimension of the simulation area
+    const double dim = 500; // Dimension of the simulation area
 
     // number of iteration
     int it = 1000;
@@ -120,8 +120,18 @@ int main() {
         for (const Particle<d> & p : particles) 
             file << p.getRadius() << std::endl;
         for (const Particle<d> &p : particles) {
-            file << p.getId() << "," << p.getPos()[0] << "," <<  p.getPos()[1] << std::endl;
-    }
+            //file << p.getId() << "," << p.getPos()[0] << "," <<  p.getPos()[1] << std::endl;
+            file << p.getId() << ",";
+
+            const auto& pos = p.getPos();
+            for (size_t i = 0; i < d; ++i) {
+                file << pos[i];
+                if (i < d - 1) file << ",";
+            }
+
+            file << std::endl;
+
+        }
     }else {
         std::cout << "Unable to open file";
     }
@@ -132,27 +142,28 @@ int main() {
             Particle<d> &q = particles[i];
 
             // Check if the particle hits the bounday
-            if(q.getPos()[0]+ q.getRadius() > dim || 
-                q.getPos()[0] - q.getRadius() < -dim ||
-                q.getPos()[1] + q.getRadius()> dim || 
-                q.getPos()[1] - q.getRadius()< -dim){
-                q.manage_collision(q, dim);
+            //if(q.getPos()[0]+ q.getRadius() > dim || 
+            //    q.getPos()[0] - q.getRadius() < -dim ||
+            //    q.getPos()[1] + q.getRadius()> dim || 
+            //    q.getPos()[1] - q.getRadius()< -dim){
+            if(q.hitsBoundary(dim)){
+                q.manageCollision(q, dim);
             }
             for (int j = i + 1; j < particles.size(); j++) {
                 Particle<d> &k = particles[j];
 
                 // check collisions between particles
-                if(q.square_distance(k) < ((q.getRadius() + k.getRadius())*(q.getRadius() + k.getRadius()))){
+                if(q.squareDistance(k) < ((q.getRadius() + k.getRadius())*(q.getRadius() + k.getRadius()))){
 
                     // Call the collision method
-                    q.manage_collision(k, 0.0);
+                    q.manageCollision(k, 0.0);
                 }
 
                 std::array<double, d> force_qk;
                 //force_qk = f.calculateForce(k,q);
                 q.addForce(k, *f);
             }
-            z==it-1? q.update(delta_t):q.update_and_reset(delta_t);
+            z==it-1? q.update(delta_t):q.updateAndReset(delta_t);
         }
         
         // Write on file the updates after delta_t
@@ -160,7 +171,20 @@ int main() {
             Particle<d> &q = particles[i];
             // Write on file the updates after delta_t
             if (file.is_open()) {
-                file << q.getId() << "," << q.getPos()[0] << "," <<  q.getPos()[1] << std::endl;
+
+                //file << q.getId() << "," << q.getPos()[0] << "," <<  q.getPos()[1] << std::endl;
+                file << q.getId() << ",";
+
+                const auto& pos = q.getPos();
+                for (size_t i = 0; i < d; ++i) {
+                    file << pos[i];
+                    if (i < d - 1) {
+                        file << ",";
+                    }
+                }
+
+                file << std::endl;
+
             } else {
                 std::cout << "Unable to open file";
             }
@@ -171,9 +195,11 @@ int main() {
     std::cout << "--------------------------------------------\n";
     std::cout << "Final state:\n";
     for (const Particle<d> &p : particles) {
-        p.print_states();
+        p.printStates();
 
-        std::cout << "Distance from origin: " << sqrt(pow(p.getPos()[0],2) + pow(p.getPos()[1],2)) << "\n";
+        double power = 0.0;
+        for (size_t i = 0; i < d; ++i) power = power + (p.getPos()[i] * p.getPos()[i]);
+        std::cout << "Distance from origin: " << sqrt(power) << "\n";
     }
     file.close();
     return 0;

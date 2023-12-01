@@ -16,43 +16,6 @@ class Particle {
         Particle(int id, double p, std::array<double, Dimension> pos, std::array<double, Dimension> v, double radius, bool type)
             : id(id), property(p), pos{pos}, vel{v}, force{}, type(type), radius(radius) {}
 
-        /*//getter methods for class attributes
-        double getProperty() const;
-        int getId() const;
-        
-        //std::array<double, 2> getPos() const;
-        //std::array<double, 2> getVel() const;
-        //std::array<double, 2> getForce() const;
-
-        //getter methods for class template
-        std::array<double, Dimension> getPos() const;
-        std::array<double, Dimension> getVel() const;
-        std::array<double, Dimension> getForce() const;
-
-        
-        void resetForce();
-        //method that adds new values of a force
-        void addForce(Particle<Dimension> &k, const Force<Dimension>& f);
-        // method that updates current values of a force
-        void update(double delta_t);
-        //method that updates current values of a force and resets it for next implementation
-        void update_and_reset(const double delta_t);
-        //method that prints current states of the particles 
-        void print_states() const;
-        //method that returns type of the particles to instatiate the right kind of force
-        bool getType() const;
-        //method that returns the distance between two particles
-        double square_distance(const Particle<Dimension> &p) const;
-        //method that returns the radius of the particle
-        double getRadius() const;
-        //method that manage collisions
-        void manage_collision(Particle<Dimension> &p, double dim);
-        //method that set the velocity of the particle
-        // pass by const reference, not copy!
-        void setVel(const std::array<double, Dimension> &v);
-        //method that sets the property of the particle (only to manage the inelastic collisions)
-        void setProperty(const double m);*/
-
         //setter methods for the attributes of the class    
 
         void setVel(const std::array<double, Dimension> &v){ //original method took as arguments (double vx, double vy)
@@ -105,7 +68,7 @@ class Particle {
         }
 
         //method that calculates the square of the distance
-        double square_distance(const Particle<Dimension> &p) const{
+        double squareDistance(const Particle<Dimension> &p) const{
             const auto& k_pos = getPos();
             const auto& p_pos = p.getPos();
 
@@ -153,7 +116,7 @@ class Particle {
         }
 
         //method that updates positions and velocities using Euler integration + resets force
-        void update_and_reset(const double delta_t) {
+        void updateAndReset(const double delta_t) {
             
             //pos[0] += vel[0] * delta_t;
             //pos[1] += vel[1] * delta_t;
@@ -169,39 +132,75 @@ class Particle {
         }
 
         //method that prints info about the particles
-        void print_states() const{
+        void printStates() const{
             std::cout << "Id: " << id << std::endl;
-            std::cout << "Position: " << pos[0] << " " << pos[1] << std::endl;
+            
+            //std::cout << "Position: " << pos[0] << " " << pos[1] << std::endl;
+            std::cout << "Position: ";
+            for (size_t i = 0; i < Dimension; ++i) {
+                std::cout << pos[i];
+                if (i < Dimension - 1) {
+                    std::cout << " ";
+                }
+            }
+            std::cout << std::endl;
+
             (!type? std::cout << "Mass: " : std::cout << "Charge: ");
             std::cout << property << std::endl;
-            std::cout << "Force: " << force[0] << " " << force[1] << std::endl;
-            std::cout << "Velocity: " << vel[0] << " " << vel[1] << std::endl;
+
+            //std::cout << "Force: " << force[0] << " " << force[1] << std::endl;
+            std::cout << "Force: ";
+            for (size_t i = 0; i < Dimension; ++i) {
+                std::cout << force[i];
+                if (i < Dimension - 1) {
+                    std::cout << " ";
+                }
+            }
+            std::cout << std::endl;
+            
+            //std::cout << "Velocity: " << vel[0] << " " << vel[1] << std::endl;
+            std::cout << "Velocity: ";
+            for (size_t i = 0; i < Dimension; ++i) {
+                std::cout << vel[i];
+                if (i < Dimension - 1) {
+                    std::cout << " ";
+                }
+            }
+            std::cout << std::endl;
         }
 
         //method that manages collision
-        void manage_collision(Particle<Dimension> &p, double dim){
+        void manageCollision(Particle<Dimension> &p, double dim){
             if(dim){
                 //manages collision with the borders of the simulation (visual purposes only)
-                if(pos[0] + radius > dim || pos[0] - radius < -dim){
+                for(size_t i = 0; i < Dimension; ++i){
+                    if (pos[i] + radius > dim || pos[i] - radius < -dim) vel[i] = -vel[i];
+                }
+                
+                /*if(pos[0] + radius > dim || pos[0] - radius < -dim){
                     vel[0] = -vel[0];
                 }
                 if(pos[1] + radius > dim || pos[1] - radius < -dim){
                     vel[1] = -vel[1];
-                }
+                }*/
             }
             else{ //manages collision between particles
                 //elastic collision
                 //if(elastic){
-                    /*double xvel_prev, yvel_prev, xvel_new, yvel_new;
-                    xvel_prev = vel[0];
-                    yvel_prev = vel[1];
-                    vel[0] = ((property - p.getProperty())*vel[0]+2*p.getProperty()*p.getVel()[0]) / (property + p.getProperty());
-                    vel[1] = ((property - p.getProperty())*vel[1]+2*p.getProperty()*p.getVel()[1]) / (property + p.getProperty());
-                    xvel_new = ((p.getProperty() - property)*p.getVel()[0]+2*property*xvel_prev) / (property + p.getProperty());
-                    yvel_new = ((p.getProperty() - property)*p.getVel()[1]+2*property*yvel_prev) / (property + p.getProperty());
-                    p.setVel(xvel_new, yvel_new);
+                    //double xvel_prev, yvel_prev, xvel_new, yvel_new;
+                    std::array<double, Dimension> prev_vel, new_vel;
+                    //xvel_prev = vel[0];
+                    //yvel_prev = vel[1];
+                    for(size_t i = 0; i < Dimension; ++i) prev_vel[i] = vel[i];
+                    for(size_t i = 0; i < Dimension; ++i) vel[i] = ((property - p.getProperty())*vel[i]+2*p.getProperty()*p.getVel()[i]) / (property + p.getProperty());
+                    //vel[0] = ((property - p.getProperty())*vel[0]+2*p.getProperty()*p.getVel()[0]) / (property + p.getProperty());
+                    //vel[1] = ((property - p.getProperty())*vel[1]+2*p.getProperty()*p.getVel()[1]) / (property + p.getProperty());
+                    for(size_t i = 0; i < Dimension; ++i) new_vel[i] = ((p.getProperty() - property)*p.getVel()[i]+2*property*prev_vel[i]) / (property + p.getProperty());
+                    //xvel_new = ((p.getProperty() - property)*p.getVel()[0]+2*property*xvel_prev) / (property + p.getProperty());
+                    //yvel_new = ((p.getProperty() - property)*p.getVel()[1]+2*property*yvel_prev) / (property + p.getProperty());
+                    p.setVel(new_vel);
                 /*} else {
-                    //inelastic collision -- da rivedere 
+                   //inelastic collision -- da rivedere 
                     double xvel_prev, yvel_prev, xvel_new, yvel_new;
                     vel[0] = (property * vel[0] + p.getProperty() * p.getVel()[0]) / (property + p.getProperty());
                     vel[1] = (property * vel[1] + p.getProperty() * p.getVel()[1]) / (property + p.getProperty());
@@ -209,11 +208,22 @@ class Particle {
                     radius = radius + p.getRadius(); 
                     p.setproperty(0.0);
 
-                */ 
+                */
                 //}
             }
         }
 
+        bool hitsBoundary(double dim){
+            bool bound_touched = false;
+            for(size_t i = 0; i < Dimension; ++i){
+                if(getPos()[i] + getRadius() > dim || getPos()[i] - getRadius() < -dim ){ 
+                    bound_touched = true;
+                    return bound_touched;
+                }
+            } 
+            
+            return bound_touched;
+        }
 
         ~Particle(){}
     private:
@@ -235,4 +245,4 @@ class Particle {
         double radius;
 };
 
-#endif 
+#endif
