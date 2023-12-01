@@ -1,6 +1,6 @@
 #include <vector>
-#include "../utils/particle.hpp" 
-#include "../utils/force.hpp"
+#include "../../utils/particle.hpp" 
+#include "../../utils/force.hpp"
 #include <cstdlib> 
 #include <ctime>
 #include <iostream>
@@ -10,19 +10,16 @@
 #include <omp.h>
 
 // Function that randomly generates particles:
-std::vector<Particle> generateRandomParticles(int N = 10, int posBoundary = 100, int minMass = 1, int maxMass = 99, int maxVx = 100, int maxVy = 100, int minRadius = 0, int maxRadius = 15, bool type) {
+std::vector<Particle> generateRandomParticlesParallel(int N = 10, int posBoundary = 100, int minMass = 1, int maxMass = 99, int maxVx = 100, int maxVy = 100, int minRadius = 0, int maxRadius = 15, bool type = false) {
     std::vector<Particle> particles;
 
     // Initialize random seed
-    unsigned int seed = 1234;
+    unsigned int seed;
 
-    // Define num threads
     // TODO: make it a parameter that we can choose outside of this function
-    int num_threads = 4;
-
+    int num_threads = 4, r;
+    double mass, charge, x, y, vx, vy;
     bool uniquePosition = false;
-    double x, y;
-    int r;
 
     // Initialize random seeds for each thread beacuse if multiple threads call rand_r() with the same seed, it can lead to data races and unpredictable behavior.
     unsigned int seeds[num_threads];
@@ -32,11 +29,11 @@ std::vector<Particle> generateRandomParticles(int N = 10, int posBoundary = 100,
     }
 
     // Parallelize the outer for loop
-    #pragma omp parallel for num_threads(num_threads) private(x, y, r, mass, charge, vx, vy, p) shared(particles, seed)
+    #pragma omp parallel for num_threads(num_threads) private(x, y, r, mass, charge, vx, vy) shared(particles, seed)
     for (int i = 0; i < N; i++) {
 
         // get the thread seed
-        unsigned int seed = seeds[omp_get_thread_num()];
+        seed = seeds[omp_get_thread_num()];
         uniquePosition = false;
         while (!uniquePosition) {
             uniquePosition = true;
@@ -66,28 +63,27 @@ std::vector<Particle> generateRandomParticles(int N = 10, int posBoundary = 100,
         }
 
         // Generate random mass between minMass and maxMass
-        double mass = minMass + static_cast<double>(rand_r(&seed)) / (static_cast<double>(RAND_MAX/(maxMass-1)));
-        double charge = 0.0;
+        mass = minMass + static_cast<double>(rand_r(&seed)) / (static_cast<double>(RAND_MAX/(maxMass-1)));
+        charge = 0.0;
 
         // Generate random velocity between -maxVx and maxVx
-        double vx = -maxVx + static_cast<double>(rand_r(&seed)) / (static_cast<double>(RAND_MAX/(2*maxVx)));
-        double vy = -maxVy + static_cast<double>(rand_r(&seed)) / (static_cast<double>(RAND_MAX/(2*maxVy)));
+        vx = -maxVx + static_cast<double>(rand_r(&seed)) / (static_cast<double>(RAND_MAX/(2*maxVx)));
+        vy = -maxVy + static_cast<double>(rand_r(&seed)) / (static_cast<double>(RAND_MAX/(2*maxVy)));
 
         // Create a new particle with the random mass, position, and velocity
         Particle p(i, mass, charge, x, y, vx, vy, r);
 
         // Add the particle to the vector
         // Use an atomic operation to avoid data corruption
-        #pragma omp atomic
+        #pragma omp critical
         particles.push_back(p);
     }
-
 
     return particles;
 }
 
 
-std::vector<Particle> generateRandomParticles_serial(int N, int posBoundary = 100, int minProperty = 1, int maxProperty = 99, int maxVx = 50, int maxVy = 50, int minRadius = 0, int maxRadius = 15, bool type = false) {
+std::vector<Particle> generateRandomParticlesSerial(int N, int posBoundary = 100, int minProperty = 1, int maxProperty = 99, int maxVx = 50, int maxVy = 50, int minRadius = 0, int maxRadius = 15, bool type = false) {
     std::vector<Particle> particles;
 
     // Initialize random seed
@@ -144,9 +140,9 @@ int main() {
 
     // Definition of variables
     const double delta_t = 0.01; // [sec]
-    int dim = 600; // Dimension of the simulation area
+    int dim = 50000; // Dimension of the simulation area
     int it = 1000; // Number of iteration
-    int n = 50; // Number of particles
+    int n = 5000; // Number of particles
     double softening = 0.7; // Softening parameter
     std::vector<Particle> particles;  // Create a vector of particles
     CustomForce f;
@@ -155,13 +151,13 @@ int main() {
     
 
     clock_t start = clock();
-    generateRandomParticles(n, dim, 1, 99, 50, 50, 1, 10, false);
+    generateRandomParticlesParallel(n, dim, 1, 99, 50, 50, 1, 10, false);
     clock_t end = clock();
     double duration = double(end - start) / CLOCKS_PER_SEC;
     std::cout << "Time taken by parallel function: " << duration << " seconds" << std::endl;
 
     start = clock();
-    generateRandomParticles_serial(n, dim, 1, 99, 50, 50, 1, 10, false);
+    generateRandomParticlesSerial(n, dim, 1, 99, 50, 50, 1, 10, false);
     end = clock();
     duration = double(end - start) / CLOCKS_PER_SEC;
     std::cout << "Time taken by serial function: " << duration << " seconds" << std::endl;
