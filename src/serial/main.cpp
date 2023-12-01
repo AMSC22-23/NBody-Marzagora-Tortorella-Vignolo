@@ -24,7 +24,7 @@ std::vector<Particle> generateRandomParticles(int N, int posBoundary = 100, int 
         while (!uniquePosition) {
             uniquePosition = true;
 
-            // Generate random radius between 0 and 
+            // Generate random radius between minRadius and maxRadius
             r = rand() % (maxRadius - minRadius + 1) + minRadius;
 
             // Generate random position between -posBoundary+r and +posBoundary-r
@@ -43,9 +43,6 @@ std::vector<Particle> generateRandomParticles(int N, int posBoundary = 100, int 
 
         // Generate random value of property between 1 and 100
         double property = minProperty + static_cast<double>(rand()) / (static_cast<double>(RAND_MAX/(maxProperty-1)));
-
-        // Generate random radius between 1 and 10
-        double radius = 1 + static_cast<double>(rand()) / (static_cast<double>(RAND_MAX/(10-1)));
 
         // Generate random velocity between -100 and 100
         double vx = -maxVx + static_cast<double>(rand()) / (static_cast<double>(RAND_MAX/(2*maxVx)));
