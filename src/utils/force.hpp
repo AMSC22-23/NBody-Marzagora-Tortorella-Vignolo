@@ -32,14 +32,15 @@ class GravitationalForce : public Force<Dimension>{
             std::array<double, Dimension> pos_diff;
             for(size_t i = 0; i < Dimension; ++i) pos_diff[i] = k_pos[i] - q_pos[i];
 
-            double dist = 0.0;
-            for(size_t i = 0; i < Dimension; ++i) dist = pos_diff[i] * pos_diff[i] + dist;
+            double dist_squared = 0.0;
+            for(size_t i = 0; i < Dimension; ++i) dist_squared = pos_diff[i] * pos_diff[i] + dist_squared;
+            double dist = std::sqrt(dist_squared);
             double dist_cubed = dist * dist * dist;
 
             double gravF = G * q.getProperty() * k.getProperty() / dist_cubed;
 
             std::array<double, Dimension> force_qk;
-            for(size_t i = 0; i < Dimension; ++i) force_qk[i] = pos_diff[i];
+            for(size_t i = 0; i < Dimension; ++i) force_qk[i] = gravF * pos_diff[i];
 
             return force_qk; 
         }
@@ -53,20 +54,21 @@ class CoulombForce : public Force<Dimension>{
         std::array<double,Dimension> calculateForce(const Particle<Dimension> &k, const Particle<Dimension> &q) const override{
             const auto& k_pos = k.getPos();
             const auto& q_pos = q.getPos();
+
             std::array<double, Dimension> pos_diff;
             for(size_t i = 0; i < Dimension; ++i) pos_diff[i] = k_pos[i] - q_pos[i];
 
-            double dist = 0.0;
-            for(size_t i = 0; i < Dimension; ++i) dist = pos_diff[i] * pos_diff[i] + dist;
+            double dist_squared = 0.0;
+            for(size_t i = 0; i < Dimension; ++i) dist_squared = pos_diff[i] * pos_diff[i] + dist_squared;
+            double dist = std::sqrt(dist_squared);
             double dist_cubed = dist * dist * dist;
 
-            double coulF = K * q.getProperty() * k.getProperty() / dist_cubed;
+            double coulF = G * q.getProperty() * k.getProperty() / dist_cubed;
 
             std::array<double, Dimension> force_qk;
-            
             for(size_t i = 0; i < Dimension; ++i) force_qk[i] = coulF * pos_diff[i];
 
-            return force_qk;
+            return force_qk; 
         }
     private:
         double const K = 8.987e-09;
@@ -132,14 +134,15 @@ class CustomForce : public Force<Dimension>{
             std::array<double, Dimension> pos_diff;
             for(size_t i = 0; i < Dimension; ++i) pos_diff[i] = k_pos[i] - q_pos[i];
 
-            double dist = 0.0;
-            for(size_t i = 0; i < Dimension; ++i) dist = pos_diff[i] * pos_diff[i] + dist;
+            double dist_squared = 0.0;
+            for(size_t i = 0; i < Dimension; ++i) dist_squared = pos_diff[i] * pos_diff[i] + dist_squared;
+            double dist = std::sqrt(dist_squared);
             double dist_cubed = dist * dist * dist;
 
-            double gravF = G * q.getProperty() * k.getProperty() / dist_cubed;
+            double customF = G * q.getProperty() * k.getProperty() / dist_cubed;
 
             std::array<double, Dimension> force_qk;
-            for(size_t i = 0; i < Dimension; ++i) force_qk[i] = pos_diff[i];
+            for(size_t i = 0; i < Dimension; ++i) force_qk[i] = customF * pos_diff[i];
 
             return force_qk; 
         }
