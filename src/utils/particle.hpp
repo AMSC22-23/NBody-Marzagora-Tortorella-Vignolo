@@ -80,28 +80,26 @@ class Particle {
         }
 
         //method that adds force 
-        void addForce(Particle<Dimension> &k, const Force<Dimension>& f) {
-            std::array<double,Dimension> force_qk;
-            force_qk = f.calculateForce(k, *this);
+        void addForce(const std::array<double, Dimension> &force_qk) {
 
             for(size_t i = 0; i < Dimension; ++i){
                 force[i] += force_qk[i];
-                k.force[i] -= force_qk[i];
             }
+
         }
 
         //method that updates positions and velocities using Euler integration
-        void update(double delta_t) {;
+        void update(const double delta_t) {;
 
             for(size_t i = 0; i < Dimension; ++i) pos[i] += vel[i] * delta_t;
             for(size_t i = 0; i < Dimension; ++i) vel[i] += (force[i] / property) * delta_t;
+            
         }
 
         //method that updates positions and velocities using Euler integration + resets force
         void updateAndReset(const double delta_t) {
 
             for(size_t i = 0; i < Dimension; ++i) pos[i] += vel[i] * delta_t;
-
             for(size_t i = 0; i < Dimension; ++i) vel[i] += (force[i] / property) * delta_t;
 
             resetForce();

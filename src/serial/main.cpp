@@ -79,8 +79,8 @@ std::vector<Particle<Dimension>> generateRandomParticles(int N, int posBoundary 
 }
 
 template<size_t Dimension>
-void serialSimulation(int it, std::vector<Particle<Dimension>>* particles, int dim, double softening, double delta_t, std::string fileName, std::ofstream& file){
-    Force<Dimension>* f = new CustomForce<Dimension>();
+void serialSimulation(int it, std::vector<Particle<Dimension>>* particles, int dim, double softening, double delta_t, std::string fileName, std::ofstream& file, Force<Dimension>& f){
+    std::array<double,Dimension> force_qk;
     
     // Start of the simulation
     for (int z = 0; z < it; ++z){
@@ -100,7 +100,12 @@ void serialSimulation(int it, std::vector<Particle<Dimension>>* particles, int d
                     // Call the collision method
                     q.manageCollision(k, 0.0);
                 }
-                q.addForce(k, *f);
+
+                force_qk = f.calculateForce(q, k);
+                q.addForce(force_qk);
+                for(size_t i = 0; i < Dimension; ++i) force_qk[i] = -force_qk[i];
+                k.addForce(force_qk);
+
             }
             z==it-1? q.update(delta_t):q.updateAndReset(delta_t);
         }
@@ -129,17 +134,30 @@ int main() {
     // Define of simulation variables
     const int d = 2; //2D or 3D
     const double delta_t = 0.01; // in seconds
-    const double dim = 500; // Dimension of the simulation area
+    const double dim = 50; // Dimension of the simulation area
     int it = 1000; // number of iteration
-    int n = 50; // number of particles
+    int n = 2; // number of particles
     double softening = 0.7; // Softening parameter
+    time_t start, end; // Time variables
     std::vector<Particle<d>> particles; // Create a vector of particles
-    Force<d>* f = new CustomForce<d>(); // Create force
+    Force<d>* f = new CustomForce<d>(2000); // Create force
     std::string fileName = "../graphics/coordinates.txt"; // File name
     std::ofstream file(fileName); // Open file
 
     // Generate n random particles
-    particles = generateRandomParticles<d>(n, dim, 1, 99, 50, 50, 1, 10, false);
+    //particles = generateRandomParticles<d>(n, dim, 1, 99, 50, 50, 1, 10, false);
+
+    //generate two particles with velocity null
+    std::array<double, d> pos1 = {0, 0};
+    std::array<double, d> pos2 = {20, 0};
+    std::array<double, d> vel1 = {0, 0};
+    std::array<double, d> vel2 = {0, 100};
+
+    //Particle(int id, double p, std::array<double, Dimension> pos, std::array<double, Dimension> v, double radius, bool type)
+    Particle<d> p1(0, 100, pos1, vel1, 1, false);
+    Particle<d> p2(1, 1, pos2, vel2, 1, false);
+    particles.push_back(p1);
+    particles.push_back(p2);
 
     // Print on file the initial state of the particles
     if (file.is_open()) {
@@ -165,19 +183,22 @@ int main() {
         return 0;
     }
 
-    // Start of simulation
-    serialSimulation<d>(it, &particles, dim, softening, delta_t, fileName, file);
+    // Start of simulation and compute the time taken
+    start = time(NULL);
+    serialSimulation<d>(it, &particles, dim, softening, delta_t, fileName, file, *f);
+    end = time(NULL);
+    std::cout << "Time taken by serial simulation: " << end - start << " seconds" << std::endl;
 
     // Print the final state of the particles
-    std::cout << "--------------------------------------------\n";
-    std::cout << "Final state:\n";
-    for (const Particle<d> &p : particles) {
-        p.printStates();
-        double power = 0.0;
-        for (size_t i = 0; i < d; ++i) 
-            power = power + (p.getPos()[i] * p.getPos()[i]);
-        std::cout << "Distance from origin: " << sqrt(power) << "\n";
-    }
+    //std::cout << "--------------------------------------------\n";
+    //std::cout << "Final state:\n";
+    //for (const Particle<d> &p : particles) {
+    //    p.printStates();
+    //    double power = 0.0;
+    //    for (size_t i = 0; i < d; ++i) 
+    //        power = power + (p.getPos()[i] * p.getPos()[i]);
+    //    std::cout << "Distance from origin: " << sqrt(power) << "\n";
+    //}
     file.close();
     return 0;
 }
