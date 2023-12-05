@@ -132,9 +132,9 @@ void serialSimulation(int it, std::vector<Particle<Dimension>>* particles, int d
 
 int main() {
     // Define of simulation variables
-    const int d = 2; //2D or 3D
+    const int d = 3; //2D or 3D
     const double delta_t = 0.01; // in seconds
-    const double dim = 50; // Dimension of the simulation area
+    const double dim = 75; // Dimension of the simulation area
     int it = 1000; // number of iteration
     int n = 2; // number of particles
     double softening = 0.7; // Softening parameter
@@ -148,7 +148,7 @@ int main() {
     //particles = generateRandomParticles<d>(n, dim, 1, 99, 50, 50, 1, 10, false);
 
     //generate two particles with velocity null
-    std::array<double, d> pos1 = {0, 0};
+    std::array<double, d> pos1 = {0, 0, 10};
     std::array<double, d> pos2 = {20, 0};
     std::array<double, d> vel1 = {0, 0};
     std::array<double, d> vel2 = {0, 100};
@@ -165,6 +165,8 @@ int main() {
         // Write on file the total number of particles and the size of the area of the simulation
         file << n << std::endl;
         file << dim << std::endl;
+        file << d << std::endl;
+        file << it << std::endl;
 
         // Write on file the radius of the particles and the initial state
         for (const Particle<d> & p : particles) 
