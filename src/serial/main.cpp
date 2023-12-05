@@ -136,7 +136,7 @@ int main() {
     const double delta_t = 0.01; // in seconds
     const double dim = 75; // Dimension of the simulation area
     int it = 1000; // number of iteration
-    int n = 2; // number of particles
+    int n = 1000; // number of particles
     double softening = 0.7; // Softening parameter
     time_t start, end; // Time variables
     std::vector<Particle<d>> particles; // Create a vector of particles
@@ -145,7 +145,7 @@ int main() {
     std::ofstream file(fileName); // Open file
 
     // Generate n random particles
-    //particles = generateRandomParticles<d>(n, dim, 1, 99, 50, 50, 1, 10, false);
+    particles = generateRandomParticles<d>(n, dim, 1, 99, 50, 50, 1, 10, false);
 
     //generate two particles with velocity null
     std::array<double, d> pos1 = {0, 0, 10};

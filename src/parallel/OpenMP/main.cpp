@@ -78,12 +78,13 @@ template<size_t Dimension>
 void parallelSimulation(int it, std::vector<Particle<Dimension>>* particles, int dim, double softening, double delta_t, std::string fileName, std::ofstream& file, Force<Dimension>& f){
     
     // Start of the simulation
-    //#pragma omp parallel
+    std::vector<std::vector<std::array<double, Dimension>>> local_forces(omp_get_max_threads(), std::vector<std::array<double, Dimension>>(particles->size()));
+
+    #pragma omp parallel shared(particles, f, it, delta_t, fileName, file, softening, dim)
     {
         // Set the number of threads
         omp_set_num_threads(omp_get_max_threads());
         //create a vector of thread that contains a vector of forces of dimension Dimension
-        std::vector<std::vector<std::array<double, Dimension>>> local_forces(omp_get_max_threads(), std::vector<std::array<double, Dimension>>(particles->size()));
         std::array<double, Dimension> force;
 
         for (int z = 0; z < it; ++z){
@@ -103,6 +104,7 @@ void parallelSimulation(int it, std::vector<Particle<Dimension>>* particles, int
                     }
                 }
             }
+
             #pragma omp barrier
 
             //sum all the forces calculated by each thread
@@ -117,20 +119,34 @@ void parallelSimulation(int it, std::vector<Particle<Dimension>>* particles, int
             #pragma omp barrier
 
             #pragma omp for
-            for(int j = 0; j < (*particles).size(); ++j){
-                for (int y = 0; y < Dimension; ++y) {
-                    local_forces[omp_get_thread_num()][j][y] = 0.0;
+            for(int k = 0; k < omp_get_max_threads(); ++k){
+                for (int j = 0; j < (*particles).size(); ++j) {
+                    for (int y = 0; y < Dimension; ++y) {
+                        local_forces[k][j][y] = 0.0;
+                    }
                 }
             }
+
             #pragma omp barrier
 
             //update the position of the particles
-            #pragma omp single
+            #pragma omp for
             for (int i = 0; i < (*particles).size(); ++i) {
                 Particle<Dimension> &q = (*particles)[i];
                 q.update(delta_t);
             }
             #pragma omp barrier
+
+            //print forces of particles
+            //#pragma omp single
+            //{
+            //    for (int i = 0; i < (*particles).size(); ++i) {
+            //        Particle<Dimension> &q = (*particles)[i];
+            //        for(int j = 0; j < Dimension; ++j)
+            //            std::cout << q.getForce()[j] << " ";
+            //        std::cout << std::endl;
+            //    }
+            //}
 
             //don't do this in parallel
             #pragma omp single
@@ -163,9 +179,9 @@ int main() {
     // Define of simulation variables
     const int d = 2; //2D or 3D
     const double delta_t = 0.01; // in seconds
-    const double dim = 50; // Dimension of the simulation area
+    const double dim = 10000; // Dimension of the simulation area
     int it = 1000; // number of iteration
-    int n = 20; // number of particles
+    int n = 1000; // number of particles
     double softening = 0.7; // Softening parameter
     time_t start, end;
     std::vector<Particle<d>> particles; // Create a vector of particles
@@ -174,19 +190,26 @@ int main() {
 
 
     // Generate n random particles
-    //particles = generateRandomParticlesSerial<d>(n, dim, 1, 99, 50, 50, 1, 10, false);
+    particles = generateRandomParticlesSerial<d>(n, dim, 1, 99, 50, 50, 1, 10, false);
 
-    //generate two particles with velocity null
-    std::array<double, d> pos1 = {0, 0};
-    std::array<double, d> pos2 = {20, 0};
-    std::array<double, d> vel1 = {0, 0};
-    std::array<double, d> vel2 = {0, 100};
+    ////generate two particles with velocity null
+    //std::array<double, d> pos1 = {0, 0};
+    //std::array<double, d> pos2 = {20, 0};
+    //std::array<double, d> vel1 = {0, 0};
+    //std::array<double, d> vel2 = {0, 100};
+//
+    ////Particle(int id, double p, std::array<double, Dimension> pos, std::array<double, Dimension> v, double radius, bool type)
+    //Particle<d> p1(0, 100, pos1, vel1, 1, false);
+    //Particle<d> p2(1, 1, pos2, vel2, 1, false);
+    //particles.push_back(p1);
+    //particles.push_back(p2);
+//
+    ////generate onther particle
+    //std::array<double, d> pos3 = {50, 50};
+    //std::array<double, d> vel3 = {0, 0};
+    //Particle<d> p3(2, 1, pos3, vel3, 1, false);
+    //particles.push_back(p3);
 
-    //Particle(int id, double p, std::array<double, Dimension> pos, std::array<double, Dimension> v, double radius, bool type)
-    Particle<d> p1(0, 100, pos1, vel1, 1, false);
-    Particle<d> p2(1, 1, pos2, vel2, 1, false);
-    particles.push_back(p1);
-    particles.push_back(p2);
 
 
     // Print on file the initial state of the particles
@@ -223,11 +246,11 @@ int main() {
 
 
     // Print the final state of the particles
-    std::cout << "--------------------------------------------\n";
-    std::cout << "Final state:\n";
-    for (const Particle<d> &p : particles) {
-        p.printStates();
-    }
+    //std::cout << "--------------------------------------------\n";
+    //std::cout << "Final state:\n";
+    //for (const Particle<d> &p : particles) {
+    //    p.printStates();
+    //}
     file.close();
 
 
