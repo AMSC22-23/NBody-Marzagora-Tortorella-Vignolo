@@ -134,9 +134,9 @@ int main() {
     // Define of simulation variables
     const int d = 2; //2D or 3D
     const double delta_t = 0.01; // in seconds
-    const double dim = 50; // Dimension of the simulation area
+    const double dim = 10000; // Dimension of the simulation area
     int it = 1000; // number of iteration
-    int n = 2; // number of particles
+    int n = 1000; // number of particles
     double softening = 0.7; // Softening parameter
     time_t start, end; // Time variables
     std::vector<Particle<d>> particles; // Create a vector of particles
@@ -145,19 +145,19 @@ int main() {
     std::ofstream file(fileName); // Open file
 
     // Generate n random particles
-    //particles = generateRandomParticles<d>(n, dim, 1, 99, 50, 50, 1, 10, false);
+    particles = generateRandomParticles<d>(n, dim, 1, 99, 50, 50, 1, 10, false);
 
-    //generate two particles with velocity null
-    std::array<double, d> pos1 = {0, 0};
-    std::array<double, d> pos2 = {20, 0};
-    std::array<double, d> vel1 = {0, 0};
-    std::array<double, d> vel2 = {0, 100};
-
-    //Particle(int id, double p, std::array<double, Dimension> pos, std::array<double, Dimension> v, double radius, bool type)
-    Particle<d> p1(0, 100, pos1, vel1, 1, false);
-    Particle<d> p2(1, 1, pos2, vel2, 1, false);
-    particles.push_back(p1);
-    particles.push_back(p2);
+    ////generate two particles with velocity null
+    //std::array<double, d> pos1 = {0, 0};
+    //std::array<double, d> pos2 = {20, 0};
+    //std::array<double, d> vel1 = {0, 0};
+    //std::array<double, d> vel2 = {0, 100};
+//
+    ////Particle(int id, double p, std::array<double, Dimension> pos, std::array<double, Dimension> v, double radius, bool type)
+    //Particle<d> p1(0, 100, pos1, vel1, 1, false);
+    //Particle<d> p2(1, 1, pos2, vel2, 1, false);
+    //particles.push_back(p1);
+    //particles.push_back(p2);
 
     // Print on file the initial state of the particles
     if (file.is_open()) {
