@@ -12,38 +12,38 @@
 // Function that randomly generates particles:
 
 template<size_t Dimension>
-std::vector<Particle<Dimension>> generateRandomParticlesSerial(int N, int posBoundary = 100, int minProperty = 1, int maxProperty = 99, int maxVx = 100, int maxVy = 100, int minRadius = 0, int maxRadius = 15, bool type = false) {
+std::vector<Particle<Dimension>> generateRandomParticlesSerial(int N, int posBoundary = 100, int minProperty = 1, int maxProperty = 99, int maxVx = 100, int maxVy = 100, int minRadius = 0, int maxRadius = 2.5, bool type = false) {
     std::vector<Particle<Dimension>> particles;
 
     // Initialize random seed
     srand(time(0));
 
     bool uniquePosition = false;
-    double x, y;
     int r;
+    double power = 0.0;
 
     for (int i = 0; i < N; i++) {
 
         bool uniquePosition = false;
-        //double x, y;
         std::array<double, Dimension> pos;
 
         while (!uniquePosition) {
             uniquePosition = true;
             
             // Generate random radius between minRadius and maxRadius
-            r = rand() % (maxRadius - minRadius + 1) + minRadius;
-
+            //r = rand() % (maxRadius - minRadius + 1) + minRadius;
+            r = 1;
             // Generate random position between -posBoundary+r and +posBoundary-r
-            //x = -posBoundary + r + static_cast<double>(rand()) / (static_cast<double>(RAND_MAX/(2*posBoundary - 2*r)));
-            //y = -posBoundary + r + static_cast<double>(rand()) / (static_cast<double>(RAND_MAX/(2*posBoundary - 2*r)));
             for(size_t i=0; i<Dimension; ++i)
                 pos[i] = -posBoundary + r + static_cast<double>(rand()) / (static_cast<double>(RAND_MAX/(2*posBoundary - 2*r)));
 
             // Check if the position is unique
             for (const Particle<Dimension> &p : particles) {
-                //TODO: replace method pow(...) with manual multiplication 
-                double distance = sqrt(p.getPos()[0] - pos[0] *  p.getPos()[0] - pos[0] + p.getPos()[1] - pos[1] * p.getPos()[1] - pos[1]);
+                
+                for(size_t i = 0; i < Dimension; ++i) 
+                    power = power + ((p.getPos()[i] - pos[i])*(p.getPos()[i] - pos[i]));
+
+                double distance = sqrt(power);
                 if (distance < p.getRadius() + r) {
                     uniquePosition = false;
                     break;
@@ -59,8 +59,6 @@ std::vector<Particle<Dimension>> generateRandomParticlesSerial(int N, int posBou
         std::array<double, Dimension> vel;
         // Generate random velocity between -100 and 100
         for(size_t i=0; i<Dimension; ++i)
-        //double vx = -maxVx + static_cast<double>(rand()) / (static_cast<double>(RAND_MAX/(2*maxVx)));
-        //double vy = -maxVy + static_cast<double>(rand()) / (static_cast<double>(RAND_MAX/(2*maxVy)));
             vel[i] = -maxVy + static_cast<double>(rand()) / (static_cast<double>(RAND_MAX/(2*maxVy)));
 
         // Create a new particle with the random value of property, position, and velocity
@@ -88,15 +86,26 @@ void parallelSimulation(int it, std::vector<Particle<Dimension>>* particles, int
         std::array<double, Dimension> force;
 
         for (int z = 0; z < it; ++z){
-
             //calculate forces and add it to a local array for each thread
             #pragma omp for
             for (int i = 0; i < (*particles).size(); ++i) {
-                for(int y = 0; y < Dimension; ++y)
-                    force[y] = 0;
+                for(int y = 0; y < Dimension; ++y) force[y] = 0;
+                
                 Particle<Dimension> &k = (*particles)[i];
+
+                // Check if the particle hits the boundary
+                if(k.hitsBoundary(dim)){
+                    k.manageCollision(k, dim);
+                }
+            
                 for(int j = i+1; j < (*particles).size(); ++j){
                     Particle<Dimension> &q = (*particles)[j];
+
+                    if(q.squareDistance(k) < (((q.getRadius() + k.getRadius())*(q.getRadius() + k.getRadius())))*softening){
+                        // Call the collision method
+                        q.manageCollision(k, 0.0);
+                    }
+
                     force = f.calculateForce(k, q);
                     for (int y = 0; y < Dimension; ++y) {
                         local_forces[omp_get_thread_num()][i][y] += force[y];
@@ -144,7 +153,7 @@ void parallelSimulation(int it, std::vector<Particle<Dimension>>* particles, int
             //        Particle<Dimension> &q = (*particles)[i];
             //        for(int j = 0; j < Dimension; ++j)
             //            std::cout << q.getForce()[j] << " ";
-            //        std::cout << std::endl;
+            //       std::cout << std::endl;
             //    }
             //}
 
@@ -179,36 +188,61 @@ int main() {
     // Define of simulation variables
     const int d = 2; //2D or 3D
     const double delta_t = 0.01; // in seconds
-    const double dim = 10000; // Dimension of the simulation area
+    const double dim = 100; // Dimension of the simulation area
     int it = 1000; // number of iteration
-    int n = 1000; // number of particles
+    int n = 100; // number of particles
     double softening = 0.7; // Softening parameter
     time_t start, end;
     std::vector<Particle<d>> particles; // Create a vector of particles
-    Force<d>* f = new CustomForce<d>(2000); // Create force
+    Force<d>* f = new CustomForce<d>(20); // Create force
     std::string fileName = "../../graphics/coordinates.txt"; // File name
 
 
     // Generate n random particles
     particles = generateRandomParticlesSerial<d>(n, dim, 1, 99, 50, 50, 1, 10, false);
 
-    ////generate two particles with velocity null
+    //generate two particles with velocity null
     //std::array<double, d> pos1 = {0, 0};
     //std::array<double, d> pos2 = {20, 0};
     //std::array<double, d> vel1 = {0, 0};
     //std::array<double, d> vel2 = {0, 100};
+
+    //Particle(int id, double p, std::array<double, Dimension> pos, std::array<double, Dimension> v, double radius, bool type)
+//    Particle<d> p1(0, 100, pos1, vel1, 1, false);
+//    Particle<d> p2(1, 1, pos2, vel2, 1, false);
+//    particles.push_back(p1);
+//    particles.push_back(p2);
 //
-    ////Particle(int id, double p, std::array<double, Dimension> pos, std::array<double, Dimension> v, double radius, bool type)
-    //Particle<d> p1(0, 100, pos1, vel1, 1, false);
-    //Particle<d> p2(1, 1, pos2, vel2, 1, false);
-    //particles.push_back(p1);
-    //particles.push_back(p2);
-//
-    ////generate onther particle
-    //std::array<double, d> pos3 = {50, 50};
-    //std::array<double, d> vel3 = {0, 0};
-    //Particle<d> p3(2, 1, pos3, vel3, 1, false);
-    //particles.push_back(p3);
+//    ////generate onther particle
+//    std::array<double, d> pos3 = {50, 50};
+//    std::array<double, d> vel3 = {0, 0};
+//    Particle<d> p3(2, 1, pos3, vel3, 1, false);
+//    particles.push_back(p3);
+
+
+    // Apri il file in modalità di scrittura
+    std::ofstream outputFile("particles.txt");
+
+    // Verifica se il file è stato aperto correttamente
+    if (outputFile.is_open()) {
+        // Scrivi le particelle nel file
+        for (const auto& particle : particles) {
+            outputFile << particle.getId() << "," << particle.getProperty() << ",";
+            for (size_t i = 0; i < d; ++i ) outputFile << particle.getPos()[i] << ",";
+            for (size_t i = 0; i < d; ++i ) outputFile << particle.getVel()[i] << ",";
+            outputFile << particle.getRadius() << "," << particle.getType();
+            outputFile << "\n";
+        }
+
+        // Chiudi il file dopo aver scritto tutte le particelle
+        outputFile.close();
+
+        std::cout << "Particelle scritte con successo nel file particles.txt" << std::endl;
+    } else {
+        // Se il file non può essere aperto, stampa un messaggio di errore
+        std::cerr << "Impossibile aprire il file particles.txt" << std::endl;
+        return 1; // Restituisci un codice di errore
+    }
 
 
 
@@ -246,11 +280,11 @@ int main() {
 
 
     // Print the final state of the particles
-    //std::cout << "--------------------------------------------\n";
-    //std::cout << "Final state:\n";
-    //for (const Particle<d> &p : particles) {
-    //    p.printStates();
-    //}
+    std::cout << "--------------------------------------------\n";
+    std::cout << "Final state:\n";
+    for (const Particle<d> &p : particles) {
+       p.printStates();
+    }
     file.close();
 
 
