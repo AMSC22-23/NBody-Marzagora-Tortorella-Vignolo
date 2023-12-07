@@ -1,112 +1,164 @@
 # Import necessary libraries
-import matplotlib; matplotlib.use("TkAgg")
+import matplotlib;
+matplotlib.use("TkAgg")
 import matplotlib.pyplot as plt
 import matplotlib.animation as animation
 from matplotlib.patches import Circle
-from matplotlib.widgets import Slider
 import numpy as np
 from matplotlib.widgets import Button
 import random
-import subprocess
 
-#do a function that comnpile and execute a c++ program
-def compile_and_execute():
-    subprocess.call(["g++", "-std=c++11", "-fopenmp", "-o", "main", "../main/main.cpp"])
-    subprocess.call(["./main"])
-
-compile_and_execute()
-duration = 5; # duration of the simulation
-interval_millisec = 50;  # [milliseconds], duration of the frame
-frames = int(duration/(interval_millisec*0.001)); # Calculate the number of frames
+interval_millisec = 20;  # [milliseconds], duration of the frame
 
 # Open the file for reading
 with open('coordinates.txt', 'r') as f:
+
     # Read the number of the particles to simulate
     num_particles = int(next(f).strip())
+
     # Read the dimension of the simulation area
     dim = int(next(f).strip())
+
+    # Read the dimension of the simulation (2D or 3D)
+    dimension = int(next(f).strip())
+
+    # Read frames
+    frames = int(next(f).strip())
+
     # Read the radius values from the next num_particles lines of the file
     radius = [float(next(f).strip()) for _ in range(num_particles)]
+
     # Initialize the vectors of vectors to store the coordinates of the particles
     x = [[] for _ in range(num_particles)]
     y = [[] for _ in range(num_particles)]
+    z = [[] for _ in range(num_particles)]
+
     # Read the remaining lines of the file to get the particle coordinates
-    for line in f:
-        # Split the line into id, x, and y
-        id, x_val, y_val = map(float, line.strip().split(','))
-        # Append the x and y values to the appropriate vectors
-        x[int(id)].append(x_val)
-        y[int(id)].append(y_val)
+    if(dimension == 2):
+        for line in f:
+            # Split the line into id, x, and y
+            id, x_val, y_val = map(float, line.strip().split(','))
+            x[int(id)].append(x_val)
+            y[int(id)].append(y_val)
+    else:
+        for line in f:
 
-# Create a new figure and axes
-fig, ax = plt.subplots()
+            # Split the line into id, x, y, anx z
+            id, x_val, y_val, z_val = map(float, line.strip().split(','))
+            x[int(id)].append(x_val)
+            y[int(id)].append(y_val)
+            z[int(id)].append(z_val)
 
-# Create a list of Circle objects (one for each particle)
-circles = [Circle((0, 0), radius[i], color=(random.random(), random.random(), random.random())) for i in range(len(radius))]
+if(dimension == 2):
+    print("2D animation")
 
-# Add the circles to the axes
-for circle in circles:
-    ax.add_patch(circle)
+    #Create a new figure and axes
+    fig, ax = plt.subplots()
 
-# Create a list of Line2D objects (one for each particle)
-lines = [ax.plot([], [], marker='o', markersize=radius[i])[0] for i in range(len(x))]
+    # Create a list of Circle objects (one for each particle)
+    circles_2D = [Circle((0, 0), radius[i], color=(random.random(), random.random(), random.random())) for i in range(len(radius))]
 
-# Initialization function
-# This function is called once before the animation starts
-# It sets the initial position of each circle
-def init():
-    for i, circle in enumerate(circles):
-        circle.center = (x[i][0], y[i][0])
-    return circles
+    # Add the circles to the axes
+    for circle in circles_2D:
+        ax.add_patch(circle)
 
-# Create a slider axes
-# ax_slider = plt.axes([0.1, 0.01, 0.65, 0.03], facecolor='lightgoldenrodyellow')
-# slider = Slider(ax_slider, 'Time', 0, frames, valinit=0, valstep=1)
+    # Create a list of Line2D objects (one for each particle)
+    lines = [ax.plot([], [], marker='o', markersize=radius[i])[0] for i in range(len(x))]
 
-# Set the limits of x and y axes
-ax.set_xlim([-dim, dim])
-ax.set_ylim([-dim, dim])
+    def init():
+        for i, circle in enumerate(circles_2D):
+            circle.center = (x[i][0], y[i][0])
+        return circles_2D
 
-# Animation function
-# This function is called for each frame of the animation
-# It updates the position of each circle
-def animate(i):
-    for j, circle in enumerate(circles):
-        circle.center = (x[j][i], y[j][i])  # Update the position of the circle
-    return circles
+    # Set the limits of x and y axes
+    ax.set_xlim([-dim, dim])
+    ax.set_ylim([-dim, dim])
 
-# Slider update function
-# def update(i):
-#     print("start from frame:")
-#     print(i)
-#     for j, line in enumerate(lines):
-#         line.set_data(x[j][i:i+1], y[j][i:i+1])
-#     return lines
+    def animate(i):
+        for j, circle in enumerate(circles_2D):
+            circle.center = (x[j][i], y[j][i])  # Update the position of the circle
+        return circles_2D
 
-def reset_animation(event):
-    ani.frame_seq = ani.new_frame_seq()
-    ani.event_source.start()
+    def reset_animation(event):
+        ani.frame_seq = ani.new_frame_seq()
+        ani.event_source.start()
 
-def stop_animation(event):
-    ani.event_source.stop()
+    def stop_animation(event):
+        ani.event_source.stop()
 
-def resume_animation(event):
-    ani.event_source.start
+    def resume_animation(event):
+        ani.event_source.start
 
-reser_button_ax = plt.axes([0.8, 0.9, 0.1, 0.05])
-reser_button_ax = Button(reser_button_ax, 'Start', color='lightgoldenrodyellow', hovercolor='0.975')
-reser_button_ax.on_clicked(reset_animation)
+    # Draw restart buttons
+    reser_button_ax = plt.axes([0.8, 0.9, 0.1, 0.05])
+    reser_button_ax = Button(reser_button_ax, 'Restart', color='lightgoldenrodyellow', hovercolor='0.975')
+    reser_button_ax.on_clicked(reset_animation)
 
-stop_button_ax = plt.axes([0.8, 0.025, 0.1, 0.04])
-stop_button = Button(stop_button_ax, 'Stop', color='lightgoldenrodyellow', hovercolor='0.975')
-stop_button.on_clicked(stop_animation)
+    # Draw stop buttons
+    stop_button_ax = plt.axes([0.8, 0.025, 0.1, 0.04])
+    stop_button = Button(stop_button_ax, 'Stop', color='lightgoldenrodyellow', hovercolor='0.975')
+    stop_button.on_clicked(stop_animation)
 
-# Create animation
-# The FuncAnimation function creates an animation by repeatedly calling a function (in this case, animate)
-ani = animation.FuncAnimation(fig, animate, init_func=init, frames=1000, interval=10, blit=True)
+    # Create animation
+    ani = animation.FuncAnimation(fig, animate, init_func=init, frames=frames, interval=interval_millisec, blit=True)
+    plt.show()
 
-# Connect the slider to the update function
-#slider.on_changed(update)
+else:
 
-# Display the animation
-plt.show()
+    print("3D animation")
+    fig_3D = plt.figure()
+    ax_3D = plt.axes(projection="3d")
+
+    # Set the limits of x, y, and z axes
+    ax_3D.set_xlim([-dim, dim])
+    ax_3D.set_ylim([-dim, dim])
+    ax_3D.set_zlim([-dim, dim])
+    u = np.linspace(0, 2 * np.pi, 100)
+    v = np.linspace(0, np.pi, 100)
+
+    # Function to plot a sphere
+    def plot_sphere(ax, center, radius, color):
+        u = np.linspace(0, 2 * np.pi, 100)
+        v = np.linspace(0, np.pi, 100)
+        x1 = center[0] + radius * np.outer(np.cos(u), np.sin(v))
+        y2 = center[1] + radius * np.outer(np.sin(u), np.sin(v))
+        z3 = center[2] + radius * np.outer(np.ones(np.size(u)), np.cos(v))
+        return ax.plot_surface(x1,y2,z3,color=color)
+
+    def init_3D():
+        return fig_3D
+
+    surface_color = "tab:blue"
+    def animate_3D(i):
+        ax_3D.clear()
+        ax_3D.set_xlim([-dim, dim])
+        ax_3D.set_ylim([-dim, dim])
+        ax_3D.set_zlim([-dim, dim])
+        for j in range(len(radius)):
+            x1 = x[j][i] + radius[j] * np.outer(np.cos(u), np.sin(v))
+            y1 = y[j][i] + radius[j] * np.outer(np.sin(u), np.sin(v))
+            z1 = z[j][i] + radius[j] * np.outer(np.ones(np.size(u)), np.cos(v))
+            ax_3D.plot_surface(x1, y1, z1, color=surface_color)
+        return fig_3D
+
+    def reset_animation(event):
+        ani.frame_seq = ani.new_frame_seq()
+        ani.event_source.start()
+
+    def stop_animation(event):
+        ani.event_source.stop()
+
+    def resume_animation(event):
+        ani.event_source.start
+
+    reser_button_ax = plt.axes([0.8, 0.9, 0.1, 0.05])
+    reser_button_ax = Button(reser_button_ax, 'Start', color='lightgoldenrodyellow', hovercolor='0.975')
+    reser_button_ax.on_clicked(reset_animation)
+
+    stop_button_ax = plt.axes([0.8, 0.025, 0.1, 0.04])
+    stop_button = Button(stop_button_ax, 'Stop', color='lightgoldenrodyellow', hovercolor='0.975')
+    stop_button.on_clicked(stop_animation)
+
+    # Create animation
+    ani = animation. FuncAnimation(fig_3D, animate_3D, init_func=init_3D, frames=frames, interval=interval_millisec)
+    plt.show()
