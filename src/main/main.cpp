@@ -316,8 +316,8 @@ int main() {
         // Write on file the total number of particles and the size of the area of the simulation
         file << particles.size() << std::endl;
         file << dim << std::endl;
-        //file << d << std::endl;
-        //file << it << std::endl;
+        file << d << std::endl;
+        file << it << std::endl;
 
         // Write on file the radius of the particles and the initial state
         for (const Particle<d> & p : particles) 

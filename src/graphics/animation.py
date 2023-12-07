@@ -7,7 +7,14 @@ from matplotlib.patches import Circle
 import numpy as np
 from matplotlib.widgets import Button
 import random
+import subprocess
 
+#write a funcion that compiles and runs the simulation
+def run_simulation():
+    subprocess.call(["g++", "-fopenmp", "../main/main.cpp", "-o", "main"])
+    subprocess.call(["./main"])
+
+run_simulation()
 interval_millisec = 20;  # [milliseconds], duration of the frame
 
 # Open the file for reading
