@@ -7,7 +7,14 @@ from matplotlib.widgets import Slider
 import numpy as np
 from matplotlib.widgets import Button
 import random
+import subprocess
 
+#do a function that comnpile and execute a c++ program
+def compile_and_execute():
+    subprocess.call(["g++", "-std=c++11", "-fopenmp", "-o", "main", "../main/main.cpp"])
+    subprocess.call(["./main"])
+
+compile_and_execute()
 duration = 5; # duration of the simulation
 interval_millisec = 50;  # [milliseconds], duration of the frame
 frames = int(duration/(interval_millisec*0.001)); # Calculate the number of frames
