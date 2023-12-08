@@ -10,9 +10,6 @@
 #include <random>
 #include <omp.h>
 
-
-
-// TODO: sistemare generazione quando stalla
 template<size_t Dimension>
 std::vector<Particle<Dimension>> generateRandomParticles(int N, int posBoundary = 100, int minProperty = 1, int maxProperty = 99, int maxVel = 100, int minRadius = 0, int maxRadius = 15, bool type = false) {
 
@@ -22,6 +19,7 @@ std::vector<Particle<Dimension>> generateRandomParticles(int N, int posBoundary 
     double r;
     std::vector<Particle<Dimension>> particles;
     std::array<double, Dimension> pos;
+    std::array<double, Dimension> vel;
 
     // Create a random number generators using 'random' library
     std::random_device rd;
@@ -29,7 +27,6 @@ std::vector<Particle<Dimension>> generateRandomParticles(int N, int posBoundary 
     std::uniform_real_distribution<double> disProperty(minProperty, maxProperty);
     std::uniform_real_distribution<double> disVel(-maxVel, maxVel);
     std::uniform_real_distribution<double> disRadius(minRadius, maxRadius);
-    
 
     for (int i = 0; i < N; i++) {
         count = 0;
@@ -74,7 +71,6 @@ std::vector<Particle<Dimension>> generateRandomParticles(int N, int posBoundary 
         // Generate random value of property between 1 and 100
         double property = disProperty(gen);
 
-        std::array<double, Dimension> vel;
         // Generate random velocity between -maxVel and maxVel
         for(size_t i=0; i<Dimension; ++i)
             vel[i] = disVel(gen);
@@ -151,10 +147,12 @@ void parallelSimulation(int it, std::vector<Particle<Dimension>>* particles, int
     {
         // Set the number of threads
         omp_set_num_threads(omp_get_max_threads());
+
         //create a vector of thread that contains a vector of forces of dimension Dimension
         std::array<double, Dimension> force;
 
         for (int z = 0; z < it; ++z){
+
             //calculate forces and add it to a local array for each thread
             //assign block thread in a cyclic way, not static
             #pragma omp for schedule(dynamic, u)
@@ -172,7 +170,6 @@ void parallelSimulation(int it, std::vector<Particle<Dimension>>* particles, int
                     Particle<Dimension> &q = (*particles)[j];
 
                     if(q.squareDistance(k) < (((q.getRadius() + k.getRadius())*(q.getRadius() + k.getRadius())))*softening){
-                        // Call the collision method
                         q.manageCollision(k, 0.0);
                     }
 
@@ -214,10 +211,9 @@ void parallelSimulation(int it, std::vector<Particle<Dimension>>* particles, int
             }
             //#pragma omp barrier
 
-            //don't do this in parallel
+            // Write on file the updates after delta_t
             #pragma omp single
             {
-                // Write on file the updates after delta_t
                 for (int i = 0; i < (*particles).size(); i++) {
                     Particle<Dimension> &q = (*particles)[i];
                     if (file.is_open()) {
@@ -255,11 +251,9 @@ void printAllParticlesStateAndDistance(std::vector<Particle<Dimension>>* particl
     }
 }
 
-
-
 template<size_t Dimension>
 std::vector<Particle<Dimension>> generateOrbitTestParticles( double size, double costantForce){
-    std::vector<Particle<Dimension>> particles; // Create a vector of particles
+    std::vector<Particle<Dimension>> particles; 
     double orbitRadius = size/2.0;
     double mass1 = 100;
     double mass2 = 1;
@@ -344,6 +338,7 @@ int main() {
         end = time(NULL);
         std::cout << "Time taken by parallel simulation: " << end - start << " seconds" << std::endl;
     }
+    
     //start = time(NULL);
     //serialSimulation<d>(it, &particles, dim, softening, delta_t, fileName, file, *f);
     //end = time(NULL);
