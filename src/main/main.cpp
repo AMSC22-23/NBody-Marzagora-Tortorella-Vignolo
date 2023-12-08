@@ -186,7 +186,7 @@ void parallelSimulation(int it, std::vector<Particle<Dimension>>* particles, int
             //#pragma omp barrier
 
             //sum all the forces calculated by each thread
-            #pragma omp for schedule(dynamic, u)
+            #pragma omp for schedule(static, particles->size()/omp_get_max_threads())
             for (int i = 0; i < (*particles).size(); ++i) {
                 Particle<Dimension> &q = (*particles)[i];
                 q.resetForce();
@@ -196,7 +196,7 @@ void parallelSimulation(int it, std::vector<Particle<Dimension>>* particles, int
             }
             //#pragma omp barrier
 
-            #pragma omp for schedule(dynamic, u)
+            #pragma omp for schedule(static, 1)
             for(int k = 0; k < omp_get_max_threads(); ++k){
                 for (int j = 0; j < (*particles).size(); ++j) {
                     for (int y = 0; y < Dimension; ++y) {
@@ -207,7 +207,7 @@ void parallelSimulation(int it, std::vector<Particle<Dimension>>* particles, int
             //#pragma omp barrier
 
             //update the position of the particles
-            #pragma omp for schedule(dynamic, u)
+            #pragma omp for schedule(static, particles->size()/omp_get_max_threads())
             for (int i = 0; i < (*particles).size(); ++i) {
                 Particle<Dimension> &q = (*particles)[i];
                 q.update(delta_t);
@@ -291,24 +291,24 @@ int main() {
 
     // Simulation variables
     const int d = 2; //2D or 3D
-    const double delta_t = 0.1; // In seconds
-    const double dim = 1000; // Dimension of the simulation area
-    int it = 10000; // Number of iteration
-    int n = 1000; // Number of particles
+    const double delta_t = 0.01; // In seconds
+    const double dim = 5000; // Dimension of the simulation area
+    int it = 1000; // Number of iteration
+    int n = 500; // Number of particles
     int mass = 50; // Number of particles
     int maxVel = 50; // Number of particles
     int maxradius = 10; // Number of particles
     double softening = 0.7; // Softening parameter
     time_t start, end; // Time variables
     std::vector<Particle<d>> particles; // Create a vector of particles
-    Force<d>* f = new CustomForce<d>(2000); // Create force
+    Force<d>* f = new CustomForce<d>(10000); // Create force
     std::string fileName = "../graphics/coordinates.txt"; // File name
     std::ofstream file(fileName); // Open file
 
     // Generate random particles
     // In order to launch an easy test use: generateTestParticles<d>();
-    //particles = generateRandomParticles<d>(n, dim, 1, mass, maxVel, 1, maxradius, false);
-    particles = generateOrbitTestParticles<d>(dim, 2000);
+    particles = generateRandomParticles<d>(n, dim, 1, mass, maxVel, 1, maxradius, false);
+    //particles = generateOrbitTestParticles<d>(dim, 2000);
 
     // Print on file the initial state of the particles
     if (file.is_open()) {
