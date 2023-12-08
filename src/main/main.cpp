@@ -1,6 +1,6 @@
 #include <vector>
-#include "../utils/particle.hpp" 
-#include "../utils/force.hpp" 
+#include "particle.hpp" 
+#include "force.hpp" 
 #include <cstdlib> 
 #include <ctime>
 #include <iostream>
@@ -296,9 +296,9 @@ int main() {
     const double dim = 10000; // Dimension of the simulation area
     int it = 1000; // Number of iteration
     int n = 1000; // Number of particles
-    int mass = 50; // Number of particles
-    int maxVel = 50; // Number of particles
-    int maxradius = 10; // Number of particles
+    int mass = 50; // Mass
+    int maxVel = 50; // Maximum velocity
+    int maxRadius = 10; // Maximum radius of the particles
     double softening = 0.7; // Softening parameter
     time_t start, end; // Time variables
     std::vector<Particle<d>> particles; // Create a vector of particles
@@ -308,7 +308,7 @@ int main() {
 
     // Generate random particles
     // In order to launch an easy test use: generateTestParticles<d>();
-    particles = generateRandomParticles<d>(n, dim, 1, mass, maxVel, 1, maxradius, false);
+    particles = generateRandomParticles<d>(n, dim, 1, mass, maxVel, 1, maxRadius, false);
     //particles = generateOrbitTestParticles<d>(dim, 2000);
 
     // Print on file the initial state of the particles

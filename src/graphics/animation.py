@@ -11,7 +11,7 @@ import subprocess
 
 #write a funcion that compiles and runs the simulation
 def run_simulation():
-    subprocess.call(["g++", "-fopenmp", "../main/main.cpp", "-o", "main"])
+    subprocess.call(["g++", "-fopenmp", "-I../utils", "../main/main.cpp", "-o", "main"])
     subprocess.call(["./main"])
 
 run_simulation()
