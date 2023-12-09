@@ -288,13 +288,19 @@ std::vector<Particle<Dimension>> generateOrbitTestParticles( double size, double
     return particles;
 }
 
-int main() {
+int main(int argc, char** argv) {
 
-    // Simulation variables
-    const int d = 2; //2D or 3D
+    #ifdef DIMENSION
+        const size_t d = DIMENSION;
+    #else
+        const size_t d = 2; // Default value
+    #endif
+
+    // Simulation variables    
+    std::string simulationType = std::string(argv[1]);
     const double delta_t = 0.01; // In seconds
     const double dim = 10000; // Dimension of the simulation area
-    int it = 1000; // Number of iteration
+    int it = 200; // Number of iteration
     int n = 1000; // Number of particles
     int mass = 50; // Mass
     int maxVel = 50; // Maximum velocity
@@ -338,19 +344,21 @@ int main() {
     }
 
     // Start of simulation
-    for(int i=1; i<=1; ++i)
-    {
+    
+    if(simulationType == "serial"){
         start = time(NULL);
-        parallelSimulation<d>(it, &particles, dim, softening, delta_t, fileName, file, *f, i);
+        serialSimulation<d>(it, &particles, dim, softening, delta_t, fileName, file, *f);
+        end = time(NULL);
+        std::cout << "Time taken by serial simulation: " << end - start << " seconds" << std::endl;
+
+    }else if(simulationType == "parallel"){
+        start = time(NULL);
+        parallelSimulation<d>(it, &particles, dim, softening, delta_t, fileName, file, *f, 1);
         end = time(NULL);
         std::cout << "Time taken by parallel simulation: " << end - start << " seconds" << std::endl;
+    } else {
+        std::cout << "You did not specify correctly the type of the simulation [serial/parallel]" << std::endl;
     }
-    
-    start = time(NULL);
-    serialSimulation<d>(it, &particles, dim, softening, delta_t, fileName, file, *f);
-    end = time(NULL);
-    std::cout << "Time taken by serial simulation: " << end - start << " seconds" << std::endl;
-
     // In order to print the final state of the particles use: printAllParticlesStateAndDistance(&particles);
 
     file.close();
