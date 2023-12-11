@@ -15,7 +15,7 @@ template<size_t Dimension>
 std::vector<Particle<Dimension>> generateRandomParticles(int N, int posBoundary = 100, int minProperty = 1, int maxProperty = 99, int maxVel = 100, int minRadius = 0, int maxRadius = 15, bool type = false) {
 
     // Initialize variables
-    int maxRetry  = 1000, counter = 0;
+    int maxRetry  = 15, counter = 0;
     bool overlapping = false;
     double x, y, r, property, squareDistance = 0.0;
     std::vector<Particle<Dimension>> particles;
@@ -27,12 +27,16 @@ std::vector<Particle<Dimension>> generateRandomParticles(int N, int posBoundary 
     std::uniform_real_distribution<double> disProperty(minProperty, maxProperty);
     std::uniform_real_distribution<double> disVel(-maxVel, maxVel);
     std::uniform_real_distribution<double> disRadius(minRadius, maxRadius);
-    std::uniform_real_distribution<double> disPos(-posBoundary+2*r, posBoundary-2*r);
+    std::uniform_real_distribution<double> disPos(-posBoundary+maxRadius, posBoundary-maxRadius);
 
-    for (int i = 0; i < N; i++) {
+    while (particles.size() < N) {
 
+        // Check if the function struggles to generate to generate non-overlapping particles: 
+        // if the function has to regenerate the particle's position more than maxRetry times in a row, then the program ends and print an error message
         if(counter == maxRetry)
             throw std::runtime_error("ERROR: the dimension of the simulation area is too little, please specify a bigger area or generate less particles.");
+
+        overlapping = false;
                 
         // Generate random radius between minRadius and maxRadius
         r = disRadius(gen);
@@ -41,26 +45,25 @@ std::vector<Particle<Dimension>> generateRandomParticles(int N, int posBoundary 
         for(size_t i=0; i<Dimension; ++i)
             pos[i] = disPos(gen);
 
-        // Bheck that it is not overlapping with any existing circle
+        // Check that it is not overlapping with any existing circle
         // Brute force approach
-
         for (const Particle<Dimension> &p : particles) {
+
             // Calculate the distance between the particle that we would like to create and the particle p in particles vector
             squareDistance = 0.0;
             for(size_t i = 0; i < Dimension; ++i) 
                 squareDistance = squareDistance + ((p.getPos()[i] - pos[i])*(p.getPos()[i] - pos[i]));
-            if (sqrt(squareDistance) < p.getRadius() + r) { 
-                
-                // Particles are overlapped
+            if (sqrt(squareDistance) < p.getRadius() + r) { // Particles are overlapped
+                counter++;
                 overlapping = true;
                 break; // As soon as an overlap is detected, the break statement is executed. This immediately exits the loop, skipping the remaining particles in the vector.
             }
         }
 
-        // add valid circles to array
+        // Add valid circles to array
         if (!overlapping) {
-
-            // Generate random value of property between 1 and 100
+            counter = 0;
+            // Generate random value of property between minProperty and maxProperty
             property = disProperty(gen);
 
             // Generate random velocity between -maxVel and maxVel
@@ -68,17 +71,19 @@ std::vector<Particle<Dimension>> generateRandomParticles(int N, int posBoundary 
                 vel[i] = disVel(gen);
 
             // Create a new particle with the random value of property, position, and velocity
-            Particle<Dimension> p(i, property, pos, vel, r, type);
+            Particle<Dimension> p(particles.size(), property, pos, vel, r, type);
 
             // Add the particle to the vector
             particles.push_back(p);
+        }else{
+            counter++;
         }
         
-        counter++;
     }
 
     return particles;
 }
+
 
 
 template<size_t Dimension>
@@ -132,6 +137,8 @@ void serialSimulation(int it, std::vector<Particle<Dimension>>* particles, int d
         }
     }
 }
+
+
 
 template<size_t Dimension>
 void parallelSimulation(int it, std::vector<Particle<Dimension>>* particles, int dim, double softening, double delta_t, std::string fileName, std::ofstream& file, Force<Dimension>& f, int u){
@@ -239,6 +246,8 @@ void parallelSimulation(int it, std::vector<Particle<Dimension>>* particles, int
     }
 }
 
+
+
 template<size_t Dimension>
 void printAllParticlesStateAndDistance(std::vector<Particle<Dimension>>* particles){
     std::cout << "Print All Particles State And Distance:\n";
@@ -253,6 +262,8 @@ void printAllParticlesStateAndDistance(std::vector<Particle<Dimension>>* particl
         std::cout << "Distance from origin: " << sqrt(squareDistance) << "\n";
     }
 }
+
+
 
 template<size_t Dimension>
 std::vector<Particle<Dimension>> generateOrbitTestParticles( double size, double costantForce){
@@ -285,25 +296,25 @@ std::vector<Particle<Dimension>> generateOrbitTestParticles( double size, double
 }
 
 #ifndef SIMULATION_TYPE
-#define SIMULATION_TYPE 0
+    #define SIMULATION_TYPE 1 // Default value
+#endif
+
+#ifdef DIMENSION
+    const size_t d = DIMENSION;
+#else
+    const size_t d = 2; // Default value
 #endif
 
 int main(int argc, char** argv) {
 
-    #ifdef DIMENSION
-        const size_t d = DIMENSION;
-    #else
-        const size_t d = 2; // Default value
-    #endif
-
     // Simulation variables    
     const double delta_t = 0.01; // In seconds
-    const double dim = 200; // Dimension of the simulation area
-    int it = 1000; // Number of iteration
-    int n = 1000; // Number of particles
+    const double dim = 500; // Dimension of the simulation area
+    int it = 100; // Number of iteration
+    int n = 100; // Number of particles
     int mass = 50; // Mass
     int maxVel = 50; // Maximum velocity
-    int maxRadius = 10; // Maximum radius of the particles
+    int maxRadius = 50; // Maximum radius of the particles
     double softening = 0.7; // Softening parameter
     time_t start, end; // Time variables
     std::vector<Particle<d>> particles; // Create a vector of particles
@@ -317,7 +328,6 @@ int main(int argc, char** argv) {
     end = time(NULL);
     std::cout << "Time taken by generateRandomParticles function: " << end - start << " seconds" << std::endl;
     
-    //particles = generateOrbitTestParticles<d>(dim, 2000);
 
     // Print on file the initial state of the particles
     // TODO: create a function for this
@@ -346,7 +356,7 @@ int main(int argc, char** argv) {
         return 0;
     }
 
-    // Start of simulation
+    // Start simulation
     if(SIMULATION_TYPE == 0){
         start = time(NULL);
         serialSimulation<d>(it, &particles, dim, softening, delta_t, fileName, file, *f);
