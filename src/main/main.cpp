@@ -10,16 +10,16 @@
 #include <random>
 #include <omp.h>
 
+
 template<size_t Dimension>
 std::vector<Particle<Dimension>> generateRandomParticles(int N, int posBoundary = 100, int minProperty = 1, int maxProperty = 99, int maxVel = 100, int minRadius = 0, int maxRadius = 15, bool type = false) {
 
     // Initialize variables
-    int count = 1;
-    double x, y, squareDistance = 0.0;
-    double r;
+    int maxRetry  = 1000, counter = 0;
+    bool overlapping = false;
+    double x, y, r, property, squareDistance = 0.0;
     std::vector<Particle<Dimension>> particles;
-    std::array<double, Dimension> pos;
-    std::array<double, Dimension> vel;
+    std::array<double, Dimension> pos, vel;
 
     // Create a random number generators using 'random' library
     std::random_device rd;
@@ -27,63 +27,59 @@ std::vector<Particle<Dimension>> generateRandomParticles(int N, int posBoundary 
     std::uniform_real_distribution<double> disProperty(minProperty, maxProperty);
     std::uniform_real_distribution<double> disVel(-maxVel, maxVel);
     std::uniform_real_distribution<double> disRadius(minRadius, maxRadius);
+    std::uniform_real_distribution<double> disPos(-posBoundary+2*r, posBoundary-2*r);
 
     for (int i = 0; i < N; i++) {
-        count = 0;
-        do{ 
-            // Check if the function struggles to generate to generate non-overlapping particles: 
-            // if the function has to regenerate the particle's position more than 10 times in a row, then the program ends and print an error message
-            if (count >= 10){
-                std::cout << "ERROR: the dimension of the simulation area is too little, please specify a bigger area or generate less particles." << count << "\n";
-                exit(0);
-            }
-            else{
 
-                // Generate random radius between minRadius and maxRadius
-                r = disRadius(gen);
-                std::uniform_real_distribution<double> disPos(-posBoundary+r, posBoundary-r);
-
-                // Generate random position between -posBoundary+r and +posBoundary-r
-                for(size_t i=0; i<Dimension; ++i)
-                    pos[i] = disPos(gen);
+        if(counter == maxRetry)
+            throw std::runtime_error("ERROR: the dimension of the simulation area is too little, please specify a bigger area or generate less particles.");
                 
-                // Loop all over the particles previously generated: 
-                // in the loop the program check if the newly generated particle overlaps with any of the previously generated particles
-                for (const Particle<Dimension> &p : particles) {
+        // Generate random radius between minRadius and maxRadius
+        r = disRadius(gen);
 
-                    // Calculate the distance between the particle just created and the particle p
-                    squareDistance = 0.0;
-                    for(size_t i = 0; i < Dimension; ++i) 
-                        squareDistance = squareDistance + ((p.getPos()[i] - pos[i])*(p.getPos()[i] - pos[i]));
-                    if (sqrt(squareDistance) < p.getRadius() + r) { 
-                        // Particles are overlapped
-                        // Update 'count' variable, used to check if the funciton struggles to generate non-overlapping particles
-                        count = count + 1;
-                        break;
-                    }else{ 
-                        // Particles are NOT overlapped
-                        count = -1;
-                    }
-                }
-            }
-        }while (count >= 0 && !particles.empty());
-
-        // Generate random value of property between 1 and 100
-        double property = disProperty(gen);
-
-        // Generate random velocity between -maxVel and maxVel
+        // Generate random position between -posBoundary+r and +posBoundary-r
         for(size_t i=0; i<Dimension; ++i)
-            vel[i] = disVel(gen);
+            pos[i] = disPos(gen);
 
-        // Create a new particle with the random value of property, position, and velocity
-        Particle<Dimension> p(i, property, pos, vel, r, type);
+        // Bheck that it is not overlapping with any existing circle
+        // Brute force approach
 
-        // Add the particle to the vector
-        particles.push_back(p);
+        for (const Particle<Dimension> &p : particles) {
+            // Calculate the distance between the particle that we would like to create and the particle p in particles vector
+            squareDistance = 0.0;
+            for(size_t i = 0; i < Dimension; ++i) 
+                squareDistance = squareDistance + ((p.getPos()[i] - pos[i])*(p.getPos()[i] - pos[i]));
+            if (sqrt(squareDistance) < p.getRadius() + r) { 
+                
+                // Particles are overlapped
+                overlapping = true;
+                break; // As soon as an overlap is detected, the break statement is executed. This immediately exits the loop, skipping the remaining particles in the vector.
+            }
+        }
+
+        // add valid circles to array
+        if (!overlapping) {
+
+            // Generate random value of property between 1 and 100
+            property = disProperty(gen);
+
+            // Generate random velocity between -maxVel and maxVel
+            for(size_t i=0; i<Dimension; ++i)
+                vel[i] = disVel(gen);
+
+            // Create a new particle with the random value of property, position, and velocity
+            Particle<Dimension> p(i, property, pos, vel, r, type);
+
+            // Add the particle to the vector
+            particles.push_back(p);
+        }
+        
+        counter++;
     }
 
     return particles;
 }
+
 
 template<size_t Dimension>
 void serialSimulation(int it, std::vector<Particle<Dimension>>* particles, int dim, double softening, double delta_t, std::string fileName, std::ofstream& file, Force<Dimension>& f){
@@ -288,6 +284,10 @@ std::vector<Particle<Dimension>> generateOrbitTestParticles( double size, double
     return particles;
 }
 
+#ifndef SIMULATION_TYPE
+#define SIMULATION_TYPE 0
+#endif
+
 int main(int argc, char** argv) {
 
     #ifdef DIMENSION
@@ -297,10 +297,9 @@ int main(int argc, char** argv) {
     #endif
 
     // Simulation variables    
-    std::string simulationType = std::string(argv[1]);
     const double delta_t = 0.01; // In seconds
-    const double dim = 10000; // Dimension of the simulation area
-    int it = 200; // Number of iteration
+    const double dim = 200; // Dimension of the simulation area
+    int it = 1000; // Number of iteration
     int n = 1000; // Number of particles
     int mass = 50; // Mass
     int maxVel = 50; // Maximum velocity
@@ -313,11 +312,15 @@ int main(int argc, char** argv) {
     std::ofstream file(fileName); // Open file
 
     // Generate random particles
-    // In order to launch an easy test use: generateTestParticles<d>();
+    start = time(NULL);
     particles = generateRandomParticles<d>(n, dim, 1, mass, maxVel, 1, maxRadius, false);
+    end = time(NULL);
+    std::cout << "Time taken by generateRandomParticles function: " << end - start << " seconds" << std::endl;
+    
     //particles = generateOrbitTestParticles<d>(dim, 2000);
 
     // Print on file the initial state of the particles
+    // TODO: create a function for this
     if (file.is_open()) {
 
         // Write on file the total number of particles and the size of the area of the simulation
@@ -344,14 +347,13 @@ int main(int argc, char** argv) {
     }
 
     // Start of simulation
-    
-    if(simulationType == "serial"){
+    if(SIMULATION_TYPE == 0){
         start = time(NULL);
         serialSimulation<d>(it, &particles, dim, softening, delta_t, fileName, file, *f);
         end = time(NULL);
         std::cout << "Time taken by serial simulation: " << end - start << " seconds" << std::endl;
 
-    }else if(simulationType == "parallel"){
+    }else if(SIMULATION_TYPE == 1){
         start = time(NULL);
         parallelSimulation<d>(it, &particles, dim, softening, delta_t, fileName, file, *f, 1);
         end = time(NULL);
@@ -359,8 +361,10 @@ int main(int argc, char** argv) {
     } else {
         std::cout << "You did not specify correctly the type of the simulation [serial/parallel]" << std::endl;
     }
+
     // In order to print the final state of the particles use: printAllParticlesStateAndDistance(&particles);
 
     file.close();
     return 0;
+    
 }
