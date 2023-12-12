@@ -295,6 +295,36 @@ std::vector<Particle<Dimension>> generateOrbitTestParticles( double size, double
     return particles;
 }
 
+template<size_t Dimension>
+void printInitialStateOnFile(std::vector<Particle<Dimension>>* particles, int dim, std::string fileName, std::ofstream& file, int it){
+    
+    // Print on file the initial state of the particles
+    if (file.is_open()) {
+
+        // Write on file the total number of particles and the size of the area of the simulation
+        file << (*particles).size() << std::endl;
+        file << dim << std::endl;
+        file << Dimension << std::endl;
+        file << it << std::endl;
+
+        // Write on file the radius of the particles and the initial state
+        for (const Particle<Dimension> & p : (*particles)) 
+            file << p.getRadius() << std::endl;
+        for (const Particle<Dimension> &p : (*particles)) {
+            file << p.getId() << ",";
+            const auto& pos = p.getPos();
+            for (size_t i = 0; i < Dimension; ++i) {
+                file << pos[i];
+                if (i < Dimension - 1) file << ",";
+            }
+            file << std::endl;
+        }
+    } else {
+        std::cout << "Unable to open file";
+    }
+}
+
+
 #ifndef SIMULATION_TYPE
     #define SIMULATION_TYPE 1 // Default value
 #endif
@@ -309,9 +339,9 @@ int main(int argc, char** argv) {
 
     // Simulation variables    
     const double delta_t = 0.01; // In seconds
-    const double dim = 500; // Dimension of the simulation area
+    int dim = 200; // Dimension of the simulation area
     int it = 100; // Number of iteration
-    int n = 100; // Number of particles
+    int n = 20; // Number of particles
     int mass = 50; // Mass
     int maxVel = 50; // Maximum velocity
     int maxRadius = 50; // Maximum radius of the particles
@@ -330,31 +360,7 @@ int main(int argc, char** argv) {
     
 
     // Print on file the initial state of the particles
-    // TODO: create a function for this
-    if (file.is_open()) {
-
-        // Write on file the total number of particles and the size of the area of the simulation
-        file << particles.size() << std::endl;
-        file << dim << std::endl;
-        file << d << std::endl;
-        file << it << std::endl;
-
-        // Write on file the radius of the particles and the initial state
-        for (const Particle<d> & p : particles) 
-            file << p.getRadius() << std::endl;
-        for (const Particle<d> &p : particles) {
-            file << p.getId() << ",";
-            const auto& pos = p.getPos();
-            for (size_t i = 0; i < d; ++i) {
-                file << pos[i];
-                if (i < d - 1) file << ",";
-            }
-            file << std::endl;
-        }
-    } else {
-        std::cout << "Unable to open file";
-        return 0;
-    }
+    printInitialStateOnFile(&particles, dim, fileName, file, it);
 
     // Start simulation
     if(SIMULATION_TYPE == 0){
