@@ -141,13 +141,15 @@ template<size_t Dimension>
 void parallelSimulation(int it, std::vector<Particle<Dimension>>* particles, int dim, double softening, double delta_t, std::string fileName, std::ofstream& file, Force<Dimension>& f, int u){
 
     particles->size() < omp_get_max_threads()? omp_set_num_threads(particles->size()):omp_set_num_threads(omp_get_max_threads());  
-
     // Start of the simulation
     std::vector<std::vector<std::array<double, Dimension>>> local_forces(omp_get_max_threads(), std::vector<std::array<double, Dimension>>(particles->size()));
+    
+    std::array<double,Dimension> force;
+    bool go;
 
-
-
-    #pragma omp parallel shared(particles, f, it, delta_t, fileName, file, softening, dim)
+    //set in prgama a local variable force
+    #pragma omp parallel shared(particles, f, it, delta_t, fileName, file, softening, dim, go) private(force)
+    
     {
         //#pragma omp single
         //{
@@ -156,9 +158,131 @@ void parallelSimulation(int it, std::vector<Particle<Dimension>>* particles, int
         //}
  
         //create a vector of thread that contains a vector of forces of dimension Dimension
-        std::array<double, Dimension> force;
+        ///std::array<double, Dimension> force;
 
         for (int z = 0; z < it; ++z){
+
+            //calculate forces and add it to a local array for each thread
+            //assign block thread in a cyclic way, not static and i want
+            #pragma omp for schedule(dynamic, u) 
+                for (int i = 0; i < (*particles).size(); ++i) {
+                //if(i==0)
+                //    go = false;
+                //i==0? std::cout << "INIZIO CALCOLO" << std::endl:std::cout << "" ;
+                //for(int y = 0; y < Dimension; ++y) force[y] = 0;
+                
+                Particle<Dimension> &k = (*particles)[i];
+
+                // Check if the particle hits the boundary
+                if(k.hitsBoundary(dim)){
+                    k.manageCollision(k, dim);
+                }
+            
+                for(int j = i+1; j < (*particles).size(); ++j){
+                    Particle<Dimension> &q = (*particles)[j];
+
+                    if(q.squareDistance(k) < (((q.getRadius() + k.getRadius())*(q.getRadius() + k.getRadius())))*softening){
+                        q.manageCollision(k, 0.0);
+                    }
+
+                    force = f.calculateForce(k, q);
+                    for (int y = 0; y < Dimension; ++y) {
+                        local_forces[omp_get_thread_num()][i][y] += force[y];
+                        local_forces[omp_get_thread_num()][j][y] -= force[y];
+                    }
+                }
+                //i==(*particles).size()-1? std::cout << "FINE CALCOLO" << std::endl:std::cout << "" ;
+                //if(i==(*particles).size()-1)
+                //    go = true;
+            }
+
+            //while(!go){}
+
+
+
+            //sum all the forces calculated by each thread
+            #pragma omp for schedule(static, particles->size()/omp_get_num_threads())
+            for (int i = 0; i < (*particles).size(); ++i) {
+                Particle<Dimension> &q = (*particles)[i];
+                q.resetForce();
+                for (int j = 0; j < omp_get_num_threads(); ++j) {
+                    q.addForce(local_forces[j][i]);
+                }
+                //i==(*particles).size()/omp_get_num_threads()*2-1? std::cout << "FINE CALCOLO" << std::endl:std::cout << "" ;
+            }
+            //#pragma omp barrier
+
+            #pragma omp for schedule(static, 1) nowait
+            for(int k = 0; k < omp_get_num_threads(); ++k){
+                for (int j = 0; j < (*particles).size(); ++j) {
+                    for (int y = 0; y < Dimension; ++y) {
+                        local_forces[k][j][y] = 0.0;
+                    }
+                }
+            }
+            //#pragma omp barrier
+
+            //update the position of the particles
+            #pragma omp for schedule(static, particles->size()/omp_get_num_threads())
+            for (int i = 0; i < (*particles).size(); ++i) {
+                Particle<Dimension> &q = (*particles)[i];
+                q.update(delta_t);
+            }
+            //#pragma omp barrier
+
+            // Write on file the updates after delta_t
+            #pragma omp single nowait
+            {
+                //std::cout << "INIZIO SCRITTURA" << std::endl;
+                for (int i = 0; i < (*particles).size(); i++) {
+                    Particle<Dimension> &q = (*particles)[i];
+                    if (file.is_open()) {
+                        file << q.getId() << ",";
+                        const auto& pos = q.getPos();
+                        for (size_t i = 0; i < Dimension; ++i) {
+                            file << pos[i];
+                            if (i < Dimension - 1) {
+                                file << ",";
+                            }
+                        }
+                        file << std::endl;
+                    } else {
+                        std::cout << "Unable to open file in parallelSimulation ";
+                    }
+                }
+                //std::cout << "FINITO SCRITTURA " << omp_get_thread_num << std::endl;
+            }
+            //#pragma omp barrier
+        }
+    }
+}
+
+template<size_t Dimension>
+void parallelSimulation_v2(int it, std::vector<Particle<Dimension>>* particles, int dim, double softening, double delta_t, std::string fileName, std::ofstream& file, Force<Dimension>& f, int u){
+
+    particles->size() < omp_get_max_threads()? omp_set_num_threads(particles->size()):omp_set_num_threads(omp_get_max_threads());  
+    int num_threads = omp_get_max_threads();
+
+    // Start of the simulation
+    std::vector<std::vector<std::array<double, Dimension>>> local_forces(omp_get_max_threads(), std::vector<std::array<double, Dimension>>(particles->size()));
+    
+    std::array<double,Dimension> force;
+
+    for (int z = 0; z < it; ++z){
+    //set in prgama a local variable force
+    #pragma omp parallel shared(particles, f, it, delta_t, fileName, file, softening, dim, num_threads) private(force)
+    
+    {
+        //#pragma omp single
+        //{
+        //    std::cout << "Number of threads: " << omp_get_num_threads() << std::endl;
+        //    std::cout << "Number of max threads: " << omp_get_max_threads() << std::endl;
+        //}
+ 
+        //create a vector of thread that contains a vector of forces of dimension Dimension
+        ///std::array<double, Dimension> force;
+
+        ///for (int z = 0; z < it; ++z){
 
             //calculate forces and add it to a local array for each thread
             //assign block thread in a cyclic way, not static
@@ -194,14 +318,14 @@ void parallelSimulation(int it, std::vector<Particle<Dimension>>* particles, int
             for (int i = 0; i < (*particles).size(); ++i) {
                 Particle<Dimension> &q = (*particles)[i];
                 q.resetForce();
-                for (int j = 0; j < omp_get_num_threads(); ++j) {
+                for (int j = 0; j < num_threads; ++j) {
                     q.addForce(local_forces[j][i]);
                 }
             }
             //#pragma omp barrier
 
             #pragma omp for schedule(static, 1)
-            for(int k = 0; k < omp_get_num_threads(); ++k){
+            for(int k = 0; k < num_threads; ++k){
                 for (int j = 0; j < (*particles).size(); ++j) {
                     for (int y = 0; y < Dimension; ++y) {
                         local_forces[k][j][y] = 0.0;
@@ -211,7 +335,7 @@ void parallelSimulation(int it, std::vector<Particle<Dimension>>* particles, int
             //#pragma omp barrier
 
             //update the position of the particles
-            #pragma omp for schedule(static, particles->size()/omp_get_num_threads())
+            #pragma omp for schedule(static, particles->size()/num_threads)
             for (int i = 0; i < (*particles).size(); ++i) {
                 Particle<Dimension> &q = (*particles)[i];
                 q.update(delta_t);
@@ -219,27 +343,45 @@ void parallelSimulation(int it, std::vector<Particle<Dimension>>* particles, int
             //#pragma omp barrier
 
             // Write on file the updates after delta_t
-            #pragma omp single
-            {
-                for (int i = 0; i < (*particles).size(); i++) {
-                    Particle<Dimension> &q = (*particles)[i];
-                    if (file.is_open()) {
-                        file << q.getId() << ",";
-                        const auto& pos = q.getPos();
-                        for (size_t i = 0; i < Dimension; ++i) {
-                            file << pos[i];
-                            if (i < Dimension - 1) {
-                                file << ",";
-                            }
-                        }
-                        file << std::endl;
-                    } else {
-                        std::cout << "Unable to open file in parallelSimulation ";
-                    }
+            ///#pragma omp single
+            ///{
+            ///    for (int i = 0; i < (*particles).size(); i++) {
+            ///        Particle<Dimension> &q = (*particles)[i];
+            ///        if (file.is_open()) {
+            ///            file << q.getId() << ",";
+            ///            const auto& pos = q.getPos();
+            ///            for (size_t i = 0; i < Dimension; ++i) {
+            ///                file << pos[i];
+            ///                if (i < Dimension - 1) {
+            ///                    file << ",";
+            ///                }
+            ///            }
+            ///            file << std::endl;
+            ///        } else {
+            ///            std::cout << "Unable to open file in parallelSimulation ";
+            ///        }
+            ///    }
+            ///}
+            //#pragma omp barrier
+        ///}
+    }
+    if(z%1==0)
+    {for (int i = 0; i < (*particles).size(); i++) {
+        Particle<Dimension> &q = (*particles)[i];
+        if (file.is_open()) {
+            file << q.getId() << ",";
+            const auto& pos = q.getPos();
+            for (size_t i = 0; i < Dimension; ++i) {
+                file << pos[i];
+                if (i < Dimension - 1) {
+                    file << ",";
                 }
             }
-            //#pragma omp barrier
+            file << std::endl;
+        } else {
+            std::cout << "Unable to open file in parallelSimulation ";
         }
+    }}
     }
 }
 
@@ -290,14 +432,21 @@ std::vector<Particle<Dimension>> generateOrbitTestParticles( double size, double
 
 int main() {
 
+    //prepocessor instruction that set dimension of the simulation
+    #ifdef DIMENSION
+        const int d = DIMENSION;
+    #else
+        const int d = 2;
+    #endif
+
     // Simulation variables
-    const int d = 2; //2D or 3D
-    const double delta_t = 0.01; // In seconds
+    //const int d = 3; //2D or 3D
+    const double delta_t = 1; // In seconds
     const double dim = 10000; // Dimension of the simulation area
     int it = 1000; // Number of iteration
     int n = 1000; // Number of particles
     int mass = 50; // Mass
-    int maxVel = 50; // Maximum velocity
+    int maxVel = 10; // Maximum velocity
     int maxRadius = 10; // Maximum radius of the particles
     double softening = 0.7; // Softening parameter
     time_t start, end; // Time variables
@@ -318,7 +467,7 @@ int main() {
         file << particles.size() << std::endl;
         file << dim << std::endl;
         file << d << std::endl;
-        file << it << std::endl;
+        file << it-1 << std::endl;
 
         // Write on file the radius of the particles and the initial state
         for (const Particle<d> & p : particles) 
@@ -345,13 +494,21 @@ int main() {
         end = time(NULL);
         std::cout << "Time taken by parallel simulation: " << end - start << " seconds" << std::endl;
     }
+        for(int i=1; i<=1; ++i)
+    {
+        start = time(NULL);
+        parallelSimulation_v2<d>(it, &particles, dim, softening, delta_t, fileName, file, *f, i);
+        end = time(NULL);
+        std::cout << "Time taken by parallel simulation v2: " << end - start << " seconds" << std::endl;
+    }
     
-    start = time(NULL);
-    serialSimulation<d>(it, &particles, dim, softening, delta_t, fileName, file, *f);
-    end = time(NULL);
-    std::cout << "Time taken by serial simulation: " << end - start << " seconds" << std::endl;
+    //start = time(NULL);
+    //serialSimulation<d>(it, &particles, dim, softening, delta_t, fileName, file, *f);
+    //end = time(NULL);
+    //std::cout << "Time taken by serial simulation: " << end - start << " seconds" << std::endl;
 
     // In order to print the final state of the particles use: printAllParticlesStateAndDistance(&particles);
+    //printAllParticlesStateAndDistance(&particles);
 
     file.close();
     return 0;
