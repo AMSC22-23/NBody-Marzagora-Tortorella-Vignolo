@@ -13,7 +13,7 @@ The executable is run autonomously directly by python file that displays the res
 
 You can find it inside the graphics folder:
 
-`NBody-Marzagora-Tortorella-Vignolo/src/graphics`
+`src/graphics`
 
 The program can then be executed using the command
 
@@ -38,7 +38,7 @@ If the user provides invalid inputs, the program will ask again until the user p
 
 The computational part of the code can be found inside the folder
 
-`NBody-Marzagora-Tortorella-Vignolo/src/main`
+`src/main`
 
 It can be run alone using the following command
 
