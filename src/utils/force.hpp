@@ -3,28 +3,49 @@
 
 #include <array>
 #include <cmath>
-//#include "particle.hpp"
 
 template<size_t Dimension>
 class Particle;
 
+/**
+ * @brief Force class for particle interactions.
+ * @tparam Dimension Number of dimensions of the simulation 
+ */
 template<size_t Dimension>
 class Force{
     public:
-        //Constructor
+        /**
+        * @brief Default constructor for the Force class.
+        * */
         Force(){}
 
-        // Pure virtual function for calculating force
+        /**
+         * @brief Pure virtual function for calculating the force between two particles.
+         * @param p1 First particle involved in the force calculation.
+         * @param p2 Second particle involved in the force calculation.
+         * @return Array representing the force vector between particles.
+         */
         virtual std::array<double,Dimension> calculateForce(const Particle<Dimension> &p1, const Particle<Dimension> &p2) const = 0;
 
-        //Destructor 
+        /**
+        * @brief Default destructor for the Force class.
+        * */
         virtual ~Force() {}
 };
 
-
+/**
+ * @brief GravitationalForce class models the gravitational force and inherits from Force.
+ * @tparam Dimension Number of dimensions of the simulation 
+ */
 template<size_t Dimension>
 class GravitationalForce : public Force<Dimension>{
     public:
+        /**
+         * @brief Override of function for calculating the force between two particles in order to adapt it to the gravitational force.
+         * @param p1 First particle involved in the force calculation.
+         * @param p2 Second particle involved in the force calculation.
+         * @return Array representing the force vector between particles.
+         */
         std::array<double,Dimension> calculateForce(const Particle<Dimension> &k, const Particle<Dimension> &q) const override{
             const auto& k_pos = k.getPos();
             const auto& q_pos = q.getPos();
@@ -48,9 +69,19 @@ class GravitationalForce : public Force<Dimension>{
         double const G = 6.67430e-11;
 };
 
+/**
+ * @brief CoulombForce class models the Coulomb force and inherits from Force.
+ * @tparam Dimension Number of dimensions of the simulation 
+ */
 template<size_t Dimension>
 class CoulombForce : public Force<Dimension>{
     public:
+        /**
+         * @brief Override of function for calculating the force between two particles in order to adapt it to the Coulomb force.
+         * @param k First particle involved in the force calculation.
+         * @param q Second particle involved in the force calculation.
+         * @return Array representing the force vector between particles.
+         */
         std::array<double,Dimension> calculateForce(const Particle<Dimension> &k, const Particle<Dimension> &q) const override{
             const auto& k_pos = k.getPos();
             const auto& q_pos = q.getPos();
@@ -74,9 +105,19 @@ class CoulombForce : public Force<Dimension>{
         double const K = 8.987e-09;
 };
 
+/**
+ * @brief NuclearForce class models the nuclear force and inherits from Force.
+ * @tparam Dimension Number of dimensions of the simulation 
+ */
 template<size_t Dimension>
 class NuclearForce : public Force<Dimension>{
     public: 
+        /**
+         * @brief Override of function for calculating the force between two particles in order to adapt it to the nuclear force.
+         * @param k First particle involved in the force calculation.
+         * @param q Second particle involved in the force calculation.
+         * @return Array representing the force vector between particles.
+         */
         std::array<double,Dimension> calculateForce(const Particle<Dimension> &k, const Particle<Dimension> &q) const override{
             const auto& k_pos = k.getPos();
             const auto& q_pos = q.getPos();
@@ -99,9 +140,19 @@ class NuclearForce : public Force<Dimension>{
         double const r0 = 1.0;
 };
 
+/**
+ * @brief RepulsiveForce class models the repulsive force and inherits from Force.
+ * @tparam Dimension Number of dimensions of the simulation 
+ */
 template<size_t Dimension>
 class RepulsiveForce : public Force<Dimension>{
     public: 
+        /**
+         * @brief Override of function for calculating the force between two particles in order to adapt it to the repulsive force.
+         * @param k First particle involved in the force calculation.
+         * @param q Second particle involved in the force calculation.
+         * @return Array representing the force vector between particles.
+         */
         std::array<double, Dimension> calculateForce(const Particle<Dimension> &k, const Particle<Dimension> &q) const override{
             const auto& k_pos = k.getPos();
             const auto& q_pos = q.getPos();
@@ -124,6 +175,11 @@ class RepulsiveForce : public Force<Dimension>{
         double const kp = 1.0;
 };
 
+/**
+ * @brief CustomForce class models a custom force similar to the gravitational force and inherits from Force. 
+ * For test purposes only
+ * @tparam Dimension Number of dimensions of the simulation 
+ */
 template<size_t Dimension>
 class CustomForce : public Force<Dimension>{
     public:

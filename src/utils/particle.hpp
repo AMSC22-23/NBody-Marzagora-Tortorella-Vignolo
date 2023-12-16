@@ -4,56 +4,100 @@
 #include <vector>
 #include <iostream>
 #include <array>
-//#include "force.hpp"
+
 
 template<size_t Dimension>
 class Force;
 
+/**
+ * @brief Particle class that models particles
+ * @tparam Dimension Number of dimensions of the simulation 
+ */
 template<size_t Dimension>
 class Particle {
     public:
-        // A constructor that initializes the mass, position, and velocity of the particle
+        /**
+        * @brief Constructor that initializes the mass, position, and velocity of the particle
+        * @param id Id of the particle
+        * @param p Property of particle: mass for gravitational force, charge for Coulomb force
+        * @param pos Array of positions of the particle
+        * @param v Array of velocities of the particle
+        * @param radius Radius of the particle
+        * @param type Type of the particle: 0 for gravitational, 1 for Coulomb 
+        * */
         Particle(int id, double p, std::array<double, Dimension> pos, std::array<double, Dimension> v, double radius, bool type)
             : id(id), property(p), pos{pos}, vel{v}, force{}, type(type), radius(radius) {}
 
-        //setter methods for the attributes of the class    
-
+        /**
+         * @brief Setter method for velocity of the particle
+         * @param v Array of velocities of the particle
+         * 
+        */
         void setVel(const std::array<double, Dimension> &v){
             for(size_t i=0; i < Dimension; ++i) vel[i] = v[i];
         }
 
+        /**
+         * @brief Setter method for property of the particle
+         * @param p Property of particle: mass for gravitational force, charge for Coulomb force
+        */
         void setProperty(double p){
             property = p;
         }
 
-        //getter methods for the attributes of the class
+        /**
+         * @brief Getter method for property of the particle
+         * @return property Property of particle: mass for gravitational force, charge for Coulomb force
+        */
         double getProperty() const {
             return property;
         }
 
+        /**
+         * @brief Getter method for positions of the particle
+         * @return pos Array of positions of the particle
+        */
         std::array<double, Dimension> getPos() const{
             return pos;
         }
 
+        /**
+         * @brief Getter method for velocity of the particle
+         * @return vel Array of velocity of the particle
+        */
         std::array<double, Dimension> getVel() const{
             return vel; 
         }
 
-
+        /**
+         * @brief Getter method for force of the particle
+         * @return force Array of force of the particle
+        */
         std::array<double, Dimension> getForce() const{
         return force;
         }
 
 
+        /**
+         * @brief Getter method for the ID of the particle
+         * @return id ID of the particle
+        */
         int getId() const{
             return id;
         }
 
-        
+        /**
+         * @brief Getter method for the radius of the particle
+         * @return radius Radius of the particle
+        */
         double getRadius() const{
             return radius;
         }
 
+        /**
+         * @brief Getter method for the ID of the particle
+         * @return type Type of the particle: 0 for gravitational, 1 for Coulomb 
+        */
         bool getType() const{
             return type;
         }
@@ -79,7 +123,11 @@ class Particle {
             return square_dist;
         }
 
-        //method that adds force 
+        /**
+         * @brief Method that adds force
+         * @param force_qk Array of components of the force between particles q and k
+         * 
+        */
         void addForce(const std::array<double, Dimension> &force_qk) {
 
             for(size_t i = 0; i < Dimension; ++i){
@@ -88,7 +136,11 @@ class Particle {
 
         }
 
-        //method that updates positions and velocities using Euler integration
+        /**
+         * @brief Method that updates positions and velocities using Euler integration
+         * @param delta_t Time step after which the state of the particle is being updated
+         * 
+        */
         void update(const double delta_t) {;
 
             for(size_t i = 0; i < Dimension; ++i) pos[i] += vel[i] * delta_t;
@@ -96,7 +148,10 @@ class Particle {
             
         }
 
-        //method that updates positions and velocities using Euler integration + resets force
+        /**
+         * @brief Method that updates positions and velocities using Euler integration and resets force
+         * @param delta_t Time step after which the state of the particle is being updated
+         */
         void updateAndReset(const double delta_t) {
 
             for(size_t i = 0; i < Dimension; ++i) pos[i] += vel[i] * delta_t;
@@ -105,7 +160,9 @@ class Particle {
             resetForce();
         }
 
-        //method that prints info about the particles
+        /**
+         * @brief Method that prints info about the particles
+         */
         void printStates() const{
             std::cout << "Id: " << id << std::endl;
             
@@ -140,24 +197,32 @@ class Particle {
             std::cout << std::endl;
         }
 
-        //method that manages collision
+        /**
+         * @brief Method that manages collisions between two particles and between a particle and the borders of the simulation (visual purposes only)
+         * @param p Particle which has collided with this particle
+         * @param dim Number of dimensions of the simulation
+         */
         void manageCollision(Particle<Dimension> &p, double dim){
             if(dim){
-                //manages collision with the borders of the simulation (visual purposes only)
                 for(size_t i = 0; i < Dimension; ++i){
                     if (pos[i] + radius > dim || pos[i] - radius < -dim) vel[i] = -vel[i];
                 }
             }
-            else{ //manages collision between particles
+            else{ 
                 std::array<double, Dimension> prev_vel, new_vel;
             
                 for(size_t i = 0; i < Dimension; ++i) prev_vel[i] = vel[i];
                 for(size_t i = 0; i < Dimension; ++i) vel[i] = ((property - p.getProperty())*vel[i]+2*p.getProperty()*p.getVel()[i]) / (property + p.getProperty());
                 for(size_t i = 0; i < Dimension; ++i) new_vel[i] = ((p.getProperty() - property)*p.getVel()[i]+2*property*prev_vel[i]) / (property + p.getProperty());
                 p.setVel(new_vel);
-        }
+            }
         }
 
+        /**
+         * @brief Method that checks if the boundary has been touched
+         * @param dim Number of dimensions of the simulation
+         * @return bound_touched true if the border has been touched, false otherwise
+         */
         bool hitsBoundary(double dim){
             bool bound_touched = false;
             for(size_t i = 0; i < Dimension; ++i){
@@ -170,23 +235,17 @@ class Particle {
             return bound_touched;
         }
 
+        /**
+         * @brief Default destructor of Particle class
+        */
         ~Particle(){}
     private:
-        // If of the particle
         int id;
-        // The property (mass, charge...) of the particle
         double property;
-        // The position of the particle as a two-dimensional vector
-        //std::array<double, 2> pos;
         std::array<double, Dimension> pos;
-        // The velocity of the particle as a two-dimensional vector
-        //std::array<double, 2> vel;
         std::array<double, Dimension> vel;
-        // The force acting on the particle as a two-dimensional vector
         std::array<double, Dimension> force;
-        //type of the property (mass, charge...)
         bool type;
-        // radius of the particle
         double radius;
 };
 
