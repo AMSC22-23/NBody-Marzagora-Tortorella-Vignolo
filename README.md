@@ -34,7 +34,7 @@ when asked about the number of dimensions of simulation, insert 2 for 2D and 3 f
 
 If the user provides invalid inputs, the program will ask again until the user provides a valid one.
 
-# How to run the computational part
+# How to run ONLY the computational part
 
 The computational part of the code can be found inside the folder
 
