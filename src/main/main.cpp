@@ -18,7 +18,8 @@
  * is not overlapping with any existing circle: it calculates the distance between the particle that is being created and the particle p in particles vector. If the particles do not
  * overlap, the remaining properties of the particles are randomly generated and, lastly, the particle is added to the vector of particles; otherwise, variable counter is increased.
  * Finally, this method returns a vector of particles
- *   
+ * 
+ * @tparam Dimension Number of dimensions of the simulation  
  * @param N Number of particles to generate.
  * @param posBoundary Position boundary for particle positions (default: 100).
  * @param minProperty Minimum value of property for generated particles (default: 1).
@@ -94,7 +95,8 @@ std::vector<Particle<Dimension>> generateRandomParticles(int N, int posBoundary 
  * For each particle,  it checks first if the particle hits the boundary and manages that collision; then, it checks for collision between particles and call the manageCollision function to
  * take care of it. Finally it computed the force between the particles and adds it to a vector. 
  * After checking all the particles, it updates the values calculated before and resets the vector; finally, it writes the updated positions of the particles on the file after delta_t time.
- *   
+ * 
+ * @tparam Dimension Number of dimensions of the simulation   
  * @param it Number of iterations
  * @param particles Reference to the vector of particles
  * @param dim Number of dimensions of the simulation (2D,3D)
@@ -161,6 +163,7 @@ void serialSimulation(int it, std::vector<Particle<Dimension>>* particles, int d
  * summed up. The forces are then updated and then the local vector is reset; finally, the function periodically writes the 
  * updated positions inside a file.
  * 
+ * @tparam Dimension Number of dimensions of the simulation 
  * @param it Number of iterations
  * @param particles Reference to the vector of particles
  * @param dim Number of dimensions of the simulation (2D,3D)
@@ -259,6 +262,8 @@ void parallelSimulation(int it, std::vector<Particle<Dimension>>* particles, int
 
 /**
 * @brief Template function that prints the particles state
+*
+* @tparam Dimension Number of dimensions of the simulation 
 * @param particles Refence to the vector of particles whose states are to be printed
 */
 template<size_t Dimension>
@@ -281,6 +286,7 @@ void printAllParticlesStateAndDistance(const std::vector<Particle<Dimension>>* p
  * @brief Template function that generates two particles where one stays still and the other orbits around it.
  * For test purposes only.
  * 
+ * @tparam Dimension Number of dimensions of the simulation 
  * @param size Size of the orbit
  * @param constantForce Constant of the force applied to the particles
  * @return Vector fo particles for a two-body orbit test
@@ -316,6 +322,8 @@ std::vector<Particle<Dimension>> generateOrbitTestParticles(double size, double 
 
 /**
  * @brief Template function that writes on file the total number of particles and the size of the area of the simulation and then the initial state of the particles in a file.
+ * 
+ * @tparam Dimension Number of dimensions of the simulation 
  * @param particles Reference to the vector of particles that are to be printed on the file
  * @param dim Dimension of the simulation area
  * @param fileName Name of the file in which the initial states of the particles are going to be written
@@ -352,116 +360,113 @@ void printInitialStateOnFile(std::vector<Particle<Dimension>>* particles, int di
 
 
 /**
- * @brief Template function that wraps main function for the 2D simulation 
+ * @brief Template function that wraps main function for the 2D simulation: calls the function that generates the particles, the one that prints the initial states on the file and then
+ * calls the function which starts the simulation chosen by the user.
  * 
+ * @tparam Dimension Number of dimensions of the simulation 
+ * @param simType Simulation type: 0 for serial, 1 for parallel
+ * @param forceType Type of the force: g for gravitational force, c for coulomb force
  * 
  **/
 template<size_t Dimension>
 void main2DSimulation(int simType, char forceType){
 
-    const double delta_t = 0.01; // In seconds
-    int dim = 10; // Dimension of the simulation area
-    int it = 1000; // Number of iteration
-    int n = 50; // Number of particles
-    int mass = 50; // Mass
-    int maxVel = 50; // Maximum velocity
-    int maxRadius = 50; // Maximum radius of the particles
-    double softening = 0.7; // Softening parameter
-    time_t start, end; // Time variables
+    const double delta_t = 0.01;
+    int dimSimulationArea = 10; 
+    int iterationNumber = 1000; 
+    int numParticles = 50;
+    int mass = 50; 
+    int maxVel = 50; 
+    int maxRadius = 50; 
+    double softening = 0.7; 
+    time_t start, end;
     std::vector<Particle<Dimension>> particles; 
-    std::vector<Particle<Dimension>> particlesSerial;// Create a vector of particles
-    std::string fileName = "../graphics/coordinates.txt"; // File name
-    std::ofstream file(fileName); // Open file
-    Force<Dimension>* f;
-
-    if(forceType == 'c') f = new CoulombForce<Dimension>();
-    else f = new GravitationalForce<Dimension>(); // Create force
+    std::string fileName = "../graphics/coordinates.txt";
     
+    Force<Dimension>* f;
+    if(forceType == 'c') f = new CoulombForce<Dimension>();
+    else f = new GravitationalForce<Dimension>();
+    
+    std::ofstream file(fileName);
 
-    // Generate random particles
     start = time(NULL);
-    particles = generateRandomParticles<Dimension>(n, dim, 1, mass, maxVel, 1, maxRadius, false);
-    particlesSerial = particles;
+    particles = generateRandomParticles<Dimension>(numParticles, dimSimulationArea, 1, mass, maxVel, 1, maxRadius, false);
     end = time(NULL);
     std::cout << "Time taken by generateRandomParticles function: " << end - start << " seconds" << std::endl;
     
+    printInitialStateOnFile(&particles, dimSimulationArea, fileName, file, iterationNumber);
 
-    // Print on file the initial state of the particles
-    printInitialStateOnFile(&particles, dim, fileName, file, it);
-
-    // Start simulation
     if(simType == 0){
         start = time(NULL);
-        serialSimulation<Dimension>(it, &particles, dim, softening, delta_t, fileName, file, *f);
+        serialSimulation<Dimension>(iterationNumber, &particles, dimSimulationArea, softening, delta_t, fileName, file, *f);
         end = time(NULL);
         std::cout << "Time taken by serial simulation: " << end - start << " seconds" << std::endl;
 
     }else if(simType == 1){
         start = time(NULL);
-        parallelSimulation<Dimension>(it, &particles, dim, softening, delta_t, fileName, file, *f, 1);
+        parallelSimulation<Dimension>(iterationNumber, &particles, dimSimulationArea, softening, delta_t, fileName, file, *f, 1);
         end = time(NULL);
         std::cout << "Time taken by parallel simulation: " << end - start << " seconds" << std::endl;
-    } else {
-        std::cout << "You did not specify correctly the type of the simulation [serial/parallel]" << std::endl;
     }
-
-    // In order to print the final state of the particles use: printAllParticlesStateAndDistance(&particles);
-    //printAllParticlesStateAndDistance(&particles);
 
     file.close();
 }
 
+/**
+ * @brief Template function that wraps main function for the 3D simulation: calls the function that generates the particles, the one that prints the initial states on the file and then
+ * calls the function which starts the simulation chosen by the user.
+ * 
+ * @tparam Dimension Number of dimensions of the simulation 
+ * @param simType Simulation type: 0 for serial, 1 for parallel
+ * @param forceType Type of the force: g for gravitational force, c for coulomb force
+ * 
+ **/
 template<size_t Dimension>
 void main3DSimulation(int symType, char forceType){
-    // Simulation variables    
-    const double delta_t = 0.01; // In seconds
-    int dim = 500; // Dimension of the simulation area
-    int it = 1000; // Number of iteration
-    int n = 50; // Number of particles
-    int mass = 50; // Mass
-    int maxVel = 50; // Maximum velocity
-    int maxRadius = 50; // Maximum radius of the particles
-    double softening = 0.7; // Softening parameter
-    time_t start, end; // Time variables
-    std::vector<Particle<Dimension>> particles; // Create a vector of particles
-    std::string fileName = "../graphics/coordinates.txt"; // File name
-    std::ofstream file(fileName); // Open file
+    
+    const double delta_t = 0.01; 
+    int dimSimulationArea = 500; 
+    int iterationNumber = 1000; 
+    int numParticles = 50; 
+    int mass = 50; 
+    int maxVel = 50; 
+    int maxRadius = 50; 
+    double softening = 0.7; 
+    time_t start, end; 
+    std::vector<Particle<Dimension>> particles;
+    std::string fileName = "../graphics/coordinates.txt"; 
     Force<Dimension>* f;
-
     if(forceType == 'c') f = new CoulombForce<Dimension>();
-    else  f = new GravitationalForce<Dimension>(); // Create force
+    else  f = new GravitationalForce<Dimension>(); 
 
-    // Generate random particles
+    std::ofstream file(fileName); 
+
     start = time(NULL);
-    particles = generateRandomParticles<Dimension>(n, dim, 1, mass, maxVel, 1, maxRadius, false);
+    particles = generateRandomParticles<Dimension>(numParticles, dimSimulationArea, 1, mass, maxVel, 1, maxRadius, false);
     end = time(NULL);
     std::cout << "Time taken by generateRandomParticles function: " << end - start << " seconds" << std::endl;
     
+    printInitialStateOnFile(&particles, dimSimulationArea, fileName, file, iterationNumber);
 
-    // Print on file the initial state of the particles
-    printInitialStateOnFile(&particles, dim, fileName, file, it);
-
-    // Start simulation
     if(symType == 0){
         start = time(NULL);
-        serialSimulation<Dimension>(it, &particles, dim, softening, delta_t, fileName, file, *f);
+        serialSimulation<Dimension>(iterationNumber, &particles, dimSimulationArea, softening, delta_t, fileName, file, *f);
         end = time(NULL);
         std::cout << "Time taken by serial simulation: " << end - start << " seconds" << std::endl;
 
     }else if(symType == 1){
        start = time(NULL);
-        parallelSimulation<Dimension>(it, &particles, dim, softening, delta_t, fileName, file, *f, 1);
+        parallelSimulation<Dimension>(iterationNumber, &particles, dimSimulationArea, softening, delta_t, fileName, file, *f, 1);
         end = time(NULL);
-        std::cout << "Time taken by parallel simulation v2: " << end - start << " seconds" << std::endl;
-    } else {
-        std::cout << "You did not specify correctly the type of the simulation [serial/parallel]" << std::endl;
-    }
-
-    // In order to print the final state of the particles use: printAllParticlesStateAndDistance(&particles);
-    //printAllParticlesStateAndDistance(&particles);
+        std::cout << "Time taken by parallel simulation: " << end - start << " seconds" << std::endl;
+    } 
 
     file.close();
 }
+
+/**
+ * @brief Main function which asks the users for the simulation type, the dimensions and the force type and then runs the simulation accordingly
+*/
 
 int main(int argc, char** argv) {
 
@@ -487,7 +492,7 @@ int main(int argc, char** argv) {
 
     std::cout << "Insert c for Coulomb force or g for gravitational force: " <<std::endl;
     std::cin >> forceType;
-    while(simType != 'c' && simType != 'g'){
+    while(forceType != 'c' && forceType != 'g'){
         std::cout << "Invalid force type! Insert c for Coulomb force or g for gravitational force: " << std::endl;
         std::cin >> forceType;
     }
