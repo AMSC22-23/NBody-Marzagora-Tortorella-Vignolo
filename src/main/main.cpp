@@ -9,6 +9,7 @@
 #include <fstream>
 #include <random>
 #include <omp.h>
+#include <cstring>
 
 /**
  * @brief Template function that generates particles in order to perform the simulation. 
@@ -332,7 +333,7 @@ std::vector<Particle<Dimension>> generateOrbitTestParticles(double size, double 
  **/
 
 template<size_t Dimension>
-void printInitialStateOnFile(std::vector<Particle<Dimension>>* particles, int dim, std::string fileName, std::ofstream& file, int it){
+void printInitialStateOnFile(std::vector<Particle<Dimension>>* particles, int dim, std::string fileName, std::ofstream& file, int it, int speedUp){
     
     if (file.is_open()) {
 
@@ -340,7 +341,7 @@ void printInitialStateOnFile(std::vector<Particle<Dimension>>* particles, int di
         file << (*particles).size() << std::endl;
         file << dim << std::endl;
         file << Dimension << std::endl;
-        file << it << std::endl;
+        file << it / speedUp << std::endl;
 
         for (const Particle<Dimension> & p : (*particles)) 
             file << p.getRadius() << std::endl;
@@ -369,22 +370,13 @@ void printInitialStateOnFile(std::vector<Particle<Dimension>>* particles, int di
  * 
  **/
 template<size_t Dimension>
-void main2DSimulation(int simType, char forceType){
-
-    const double delta_t = 0.01;
-    int dimSimulationArea = 10; 
-    int iterationNumber = 1000; 
-    int numParticles = 50;
-    int mass = 50; 
-    int maxVel = 50; 
-    int maxRadius = 50; 
-    double softening = 0.7; 
+void main2DSimulation(int forceType, int simType, double delta_t, int dimSimulationArea, int iterationNumber, int numParticles, int mass, int maxVel, int maxRadius, int softening, std::string fileName, int speedUp){
+    
     time_t start, end;
     std::vector<Particle<Dimension>> particles; 
-    std::string fileName = "../graphics/coordinates.txt";
     
     Force<Dimension>* f;
-    if(forceType == 'c') f = new CoulombForce<Dimension>();
+    if(forceType == 1 ) f = new CoulombForce<Dimension>();
     else f = new GravitationalForce<Dimension>();
     
     std::ofstream file(fileName);
@@ -394,7 +386,7 @@ void main2DSimulation(int simType, char forceType){
     end = time(NULL);
     std::cout << "Time taken by generateRandomParticles function: " << end - start << " seconds" << std::endl;
     
-    printInitialStateOnFile(&particles, dimSimulationArea, fileName, file, iterationNumber);
+    printInitialStateOnFile(&particles, dimSimulationArea, fileName, file, iterationNumber, speedUp);
 
     if(simType == 0){
         start = time(NULL);
@@ -404,7 +396,7 @@ void main2DSimulation(int simType, char forceType){
 
     }else if(simType == 1){
         start = time(NULL);
-        parallelSimulation<Dimension>(iterationNumber, &particles, dimSimulationArea, softening, delta_t, fileName, file, *f, 1);
+        parallelSimulation<Dimension>(iterationNumber, &particles, dimSimulationArea, softening, delta_t, fileName, file, *f, speedUp);
         end = time(NULL);
         std::cout << "Time taken by parallel simulation: " << end - start << " seconds" << std::endl;
     }
@@ -422,21 +414,12 @@ void main2DSimulation(int simType, char forceType){
  * 
  **/
 template<size_t Dimension>
-void main3DSimulation(int symType, char forceType){
+void main3DSimulation(int forceType, int symType, double delta_t, int dimSimulationArea, int iterationNumber, int numParticles, int mass, int maxVel, int maxRadius, int softening, std::string fileName, int speedUp){
     
-    const double delta_t = 0.01; 
-    int dimSimulationArea = 500; 
-    int iterationNumber = 1000; 
-    int numParticles = 50; 
-    int mass = 50; 
-    int maxVel = 50; 
-    int maxRadius = 50; 
-    double softening = 0.7; 
     time_t start, end; 
     std::vector<Particle<Dimension>> particles;
-    std::string fileName = "../graphics/coordinates.txt"; 
     Force<Dimension>* f;
-    if(forceType == 'c') f = new CoulombForce<Dimension>();
+    if(forceType == 1 ) f = new CoulombForce<Dimension>();
     else  f = new GravitationalForce<Dimension>(); 
 
     std::ofstream file(fileName); 
@@ -446,7 +429,7 @@ void main3DSimulation(int symType, char forceType){
     end = time(NULL);
     std::cout << "Time taken by generateRandomParticles function: " << end - start << " seconds" << std::endl;
     
-    printInitialStateOnFile(&particles, dimSimulationArea, fileName, file, iterationNumber);
+    printInitialStateOnFile(&particles, dimSimulationArea, fileName, file, iterationNumber, speedUp);
 
     if(symType == 0){
         start = time(NULL);
@@ -456,12 +439,30 @@ void main3DSimulation(int symType, char forceType){
 
     }else if(symType == 1){
        start = time(NULL);
-        parallelSimulation<Dimension>(iterationNumber, &particles, dimSimulationArea, softening, delta_t, fileName, file, *f, 1);
+        parallelSimulation<Dimension>(iterationNumber, &particles, dimSimulationArea, softening, delta_t, fileName, file, *f, speedUp);
         end = time(NULL);
         std::cout << "Time taken by parallel simulation: " << end - start << " seconds" << std::endl;
     } 
 
     file.close();
+}
+
+void showHelp() {
+    printf("Change the following parameters if you don't want to run the default simualtion: \n");
+    printf("      -h : prints helper \n");
+    printf("      -dim <valore> : number of dimension of the simulation (2D,3D) \n");
+    printf("      -simT <valore> : simulation type (0 for serial, 1 for parallel) \n");
+    printf("      -force <valore> : type of the force of the simulation \n");
+    printf("      -delta <valore>: time step of the simulation\n");
+    printf("      -simA <valore> : dimension of the simulation area \n");
+    printf("      -it <valore> : iteration number \n");
+    printf("      -numP <valore> : number of particles \n");
+    printf("      -maxPr <valore> : maximum property of the particle(mass, charge)\n");
+    printf("      -maxVel <valore> : maximum velocity of the particles\n");
+    printf("      -maxR <valore> : maximum radius of the particles\n");
+    printf("      -soft <valore> : softener of the particles\n");
+    printf("      -spUp <valore> : speedup of the simulation \n");
+    printf("      -file <valore> : file in which the output is written \n");
 }
 
 /**
@@ -470,37 +471,218 @@ void main3DSimulation(int symType, char forceType){
 
 int main(int argc, char** argv) {
 
-    int dim = 0;
+    int dim = 2; 
     int simType = 0;
-    char forceType = 'c';
-    
-    std::cout << "Insert 0 for serial simulation and 1 for parallel simulation: " <<std::endl;
-    std::cin >> simType;
-    while(simType != 0 && simType != 1){
-        std::cout << "Invalid simulation type! Insert 0 for serial simulation and 1 for parallel simulation: " << std::endl;
-        std::cin >> simType;
-    }
-    
-    std::cout << "Insert dimension for the simulation: " <<std::endl;
-    std::cin >> dim;
-    
-    while(dim != 2 && dim != 3){
-        std::cout << "No feasible dimension, insert another one!" << std::endl;
-        std::cout << "Insert dimension for the simulation: " <<std::endl;
-        std::cin >> dim;
+    int forceType = 0;
+    double delta_t = 0.01;
+    int dimSimulationArea = 10; 
+    int iterationNumber = 1000; 
+    int numParticles = 50;
+    int mass = 50; 
+    int maxVel = 50; 
+    int maxRadius = 50; 
+    double softening = 0.7;
+    int speedUp = 1;
+    std::string fileName = "../graphics/coordinates.txt";
+
+     if (argc < 2) {
+        char a;
+        std::cout << "Enter 'd' to run the default simulation: " <<std::endl;
+        std::cin >> a;
+        if(a == 'd') dim = 2; 
+        else {
+            showHelp();
+            return 1;
+        }
     }
 
-    std::cout << "Insert c for Coulomb force or g for gravitational force: " <<std::endl;
-    std::cin >> forceType;
-    while(forceType != 'c' && forceType != 'g'){
-        std::cout << "Invalid force type! Insert c for Coulomb force or g for gravitational force: " << std::endl;
-        std::cin >> forceType;
+    for(int i = 1; i < argc; i++){
+        if (strcmp(argv[i], "-dim") == 0) {
+             if (++i < argc) {
+                dim = atoi(argv[i]);
+                if(dim != 2 && dim != 3) {
+                    std::cout << "No feasible dimension." << std::endl;
+                    return 1;
+                }
+            } else {
+                std::cout <<" Error: flag -dim requires values 2 or 3 to work. " <<std::endl;
+                return 1;
+            }
+        }
+
+        if (strcmp(argv[i], "-simT") == 0) {
+             if (++i < argc) {
+                simType = atoi(argv[i]);
+                if(simType != 0 && simType != 1) {
+                    std::cout << "No feasible simulation." << std::endl;
+                    return 1;
+                }
+            } else {
+                std::cout <<" Error: flag -simT requires values 0 for serial or 1 for parallel to work. " <<std::endl;
+                return 1;
+            }
+        }
+
+        if (strcmp(argv[i], "-force") == 0) {
+             if (++i < argc) {
+                forceType = atoi(argv[i]);
+                if(forceType != 0 && forceType != 1) {
+                    std::cout << "No feasible force." << std::endl;
+                    return 1;
+                }
+            } else {
+                std::cout <<" Error: flag -force requires values 0 for gravitational force or 1 for Coulomb force to work. " <<std::endl;
+                return 1;
+            }
+        }
+
+        if (strcmp(argv[i], "-delta") == 0) {
+             if (++i < argc) {
+                double delta = atoi(argv[i]);
+                if(delta < 0){
+                    std::cout << "No feasible delta t." << std::endl;
+                    return 1;
+                }
+                delta_t = delta;
+            } else {
+                std::cout <<" Error: flag -delta requires a positive value to work. " <<std::endl;
+                return 1;
+            }
+        }
+
+        if (strcmp(argv[i], "-simA") == 0) {
+             if (++i < argc) {
+                int simArea= atoi(argv[i]);
+                if(simArea < 0){
+                    std::cout << "No feasible simulation area." << std::endl;
+                    return 1;
+                }
+                dimSimulationArea = simArea;
+            } else {
+                std::cout <<" Error: flag -simA requires a positive value to work. " <<std::endl;
+                return 1;
+            }
+        }
+
+        if (strcmp(argv[i], "-it") == 0) {
+             if (++i < argc) {
+                int it = atoi(argv[i]);
+                if(it < 0) {
+                    std::cout << "No feasible number of iterations." << std::endl;
+                    return 1;
+                }
+                iterationNumber = it;
+            } else {
+                std::cout <<" Error: flag -it requires a positive value to work. " <<std::endl;
+                return 1;
+            }
+        }
+
+        if (strcmp(argv[i], "-numP") == 0) {
+             if (++i < argc) {
+                int numP = atoi(argv[i]);
+                if(numP < 0) {
+                    std::cout << "No feasible number of particles." << std::endl;
+                    return 1;
+                }
+                numParticles = numP;
+            } else {
+                std::cout <<" Error: flag -numP requires a positive value to work. " <<std::endl;
+                return 1;
+            }
+        }
+
+        if (strcmp(argv[i], "-maxPr") == 0) {
+             if (++i < argc) {
+                int maxPr = atoi(argv[i]);
+                if(maxPr < 0){
+                    std::cout << "No feasible value of maximum property." << std::endl;
+                    return 1;
+                }
+                mass = maxPr;
+            } else {
+                std::cout <<" Error: flag -maxPr requires a positive value to work. " <<std::endl;
+                return 1;
+            }
+        }
+
+        if (strcmp(argv[i], "-maxVel") == 0) {
+             if (++i < argc) {
+                int maxV = atoi(argv[i]);
+                if(maxV < 0){
+                    std::cout << "No feasible value of radius of the particles." << std::endl;
+                    return 1;
+                }
+                maxVel = maxV;
+            } else {
+                std::cout <<" Error: flag -maxVEl requires a positive value to work. " <<std::endl;
+                return 1;
+            }
+        }
+
+        if (strcmp(argv[i], "-maxR") == 0) {
+             if (++i < argc) {
+                int maxR = atoi(argv[i]);
+                if(maxR < 0) {
+                    std::cout << "No feasible value of radius of the particles." << std::endl;
+                    return 1;
+                }
+                maxRadius = maxR;
+            } else {
+                std::cout <<" Error: flag -maxR requires a positive value to work. " <<std::endl;
+                return 1;
+            }
+        }
+
+        if (strcmp(argv[i], "-soft") == 0) {
+             if (++i < argc) {
+                int soft = atoi(argv[i]);
+                if(soft < 0){ 
+                    std::cout << "No feasible value of softening." << std::endl;
+                    return 1;
+                }
+                softening = soft;
+            } else {
+                std::cout <<" Error: flag -soft requires a positive value to work. " <<std::endl;
+                return 1;
+            }
+        }
+
+        if (strcmp(argv[i], "-spUp") == 0) {
+             if (++i < argc) {
+                int spUp = atoi(argv[i]);
+                if(spUp < 0) {
+                    std::cout << "No feasible value of speedup." << std::endl;
+                    return 1;
+                }
+                speedUp = spUp;
+            } else {
+                std::cout <<" Error: flag -spUp requires a positive value to work. " <<std::endl;
+                return 1;
+            }
+        }
+
+        if (strcmp(argv[i], "-file") == 0) {
+             if (++i < argc) {
+                std::string file = argv[i];
+                fileName = file;
+            } else {
+                std::cout <<" Error: flag -file requires a valid file name to work. " <<std::endl;
+                return 1;
+            }
+        }
+
+        if (strcmp(argv[i], "-h") == 0) {
+            showHelp(); 
+            return 0;
+        }
+        
     }
 
     if(dim == 2) {
-        main2DSimulation<2>(simType, forceType);
+        main2DSimulation<2>(forceType, simType, delta_t, dimSimulationArea, iterationNumber, numParticles, mass, maxVel, maxRadius, softening, fileName, speedUp);
     } else if (dim == 3) {
-        main3DSimulation<3>(simType, forceType);    
+        main3DSimulation<3>(forceType, simType, delta_t, dimSimulationArea, iterationNumber, numParticles, mass, maxVel, maxRadius, softening, fileName, speedUp);    
     }
 
     return 0;
