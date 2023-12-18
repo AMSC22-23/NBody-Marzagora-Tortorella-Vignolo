@@ -44,9 +44,18 @@ It can be run alone using the following command
 
 `g++ -fopenmp -I../utils main.cpp -o main`
 
-The program will ask the user some information about the simulation they intend to perform, see above for detail.
-
 The flag `-fopenmp` is needed to run the parallel code, while it will be ignored if the user intends only to run the serial simulation
 
 The flag `-I../utils` specifies the program the path to the headers particle.hpp and force.hpp where all the information about particles and forces are implemented.
 
+To execute it, run `./main ` 
+
+in this way, the program will ask the user to press d to run the default function; if the user presses any other button, the helper function is shown and the program terminates. 
+
+To change the parameters of the simulation run 
+
+`./main -flag <value>`
+
+where flags and the values needed are specificied inside helper function displayed by the program.
+
+If any mistakes is made, the program terminates and it must be run again to perform the simulation.

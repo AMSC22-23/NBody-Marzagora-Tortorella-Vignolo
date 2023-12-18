@@ -448,21 +448,21 @@ void main3DSimulation(int forceType, int symType, double delta_t, int dimSimulat
 }
 
 void showHelp() {
-    printf("Change the following parameters if you don't want to run the default simualtion: \n");
-    printf("      -h : prints helper \n");
-    printf("      -dim <valore> : number of dimension of the simulation (2D,3D) \n");
-    printf("      -simT <valore> : simulation type (0 for serial, 1 for parallel) \n");
-    printf("      -force <valore> : type of the force of the simulation \n");
-    printf("      -delta <valore>: time step of the simulation\n");
-    printf("      -simA <valore> : dimension of the simulation area \n");
-    printf("      -it <valore> : iteration number \n");
-    printf("      -numP <valore> : number of particles \n");
-    printf("      -maxPr <valore> : maximum property of the particle(mass, charge)\n");
-    printf("      -maxVel <valore> : maximum velocity of the particles\n");
-    printf("      -maxR <valore> : maximum radius of the particles\n");
-    printf("      -soft <valore> : softener of the particles\n");
-    printf("      -spUp <valore> : speedup of the simulation \n");
-    printf("      -file <valore> : file in which the output is written \n");
+    std::cout << "Change the following parameters if you don't want to run the default simualtion: " <<std::endl;
+    std::cout << "      -h : prints helper " << std::endl ;
+    std::cout << "      -dim <int> : number of dimension of the simulation (2D,3D) " << std::endl;
+    std::cout << "      -simT <int> : simulation type (0 for serial, 1 for parallel) " << std::endl;
+    std::cout << "      -force <int> : type of the force of the simulation " << std::endl;
+    std::cout << "      -delta <double>: time step of the simulation " << std::endl;
+    std::cout << "      -simA <int> : dimension of the simulation area " << std::endl;
+    std::cout << "      -it <int> : iteration number " << std::endl;
+    std::cout << "      -numP <int> : number of particles " << std::endl;
+    std::cout << "      -maxPr <int> : maximum property of the particle(mass, charge) " << std::endl;
+    std::cout << "      -maxVel <int> : maximum velocity of the particles " << std::endl;
+    std::cout << "      -maxR <int> : maximum radius of the particles " << std::endl;
+    std::cout << "      -soft <double> : softener of the particles " << std::endl;
+    std::cout << "      -spUp <int> : speedup of the simulation  " << std::endl;
+    std::cout << "      -file <std::string> : file in which the output is written  " << std::endl;
 }
 
 /**
@@ -475,12 +475,12 @@ int main(int argc, char** argv) {
     int simType = 0;
     int forceType = 0;
     double delta_t = 0.01;
-    int dimSimulationArea = 10; 
+    int dimSimulationArea = 500; 
     int iterationNumber = 1000; 
     int numParticles = 50;
     int mass = 50; 
     int maxVel = 50; 
-    int maxRadius = 50; 
+    int maxRadius = 5; 
     double softening = 0.7;
     int speedUp = 1;
     std::string fileName = "../graphics/coordinates.txt";
