@@ -144,7 +144,7 @@ class Particle {
         void update(const double delta_t) {;
 
             for(size_t i = 0; i < Dimension; ++i) pos[i] += vel[i] * delta_t;
-            for(size_t i = 0; i < Dimension; ++i) vel[i] += (force[i] / property) * delta_t;
+            for(size_t i = 0; i < Dimension; ++i) vel[i] += (force[i] / ((property<0)? -property:property)) * delta_t;
             
         }
 

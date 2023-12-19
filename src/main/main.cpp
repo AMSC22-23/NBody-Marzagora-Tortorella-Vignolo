@@ -41,7 +41,7 @@ std::vector<Particle<Dimension>> generateRandomParticles(int N, int posBoundary 
     std::array<double, Dimension> pos, vel;
 
     std::random_device rd;
-    std::mt19937 gen(rd());
+    std::mt19937 gen(rd());   
     std::uniform_real_distribution<double> disProperty(minProperty, maxProperty);
     std::uniform_real_distribution<double> disVel(-maxVel, maxVel);
     std::uniform_real_distribution<double> disRadius(minRadius, maxRadius);
@@ -121,9 +121,9 @@ void serialSimulation(int it, std::vector<Particle<Dimension>>* particles, int d
 
             for (int j = i + 1; j < (*particles).size(); j++) {
                 Particle<Dimension> &k = (*particles)[j];
-
+                
                 if(q.squareDistance(k) < (((q.getRadius() + k.getRadius())*(q.getRadius() + k.getRadius())))*softening){
-
+                    
                     q.manageCollision(k, 0.0);
                 }
 
@@ -372,7 +372,7 @@ void printInitialStateOnFile(std::vector<Particle<Dimension>>* particles, int di
  * 
  **/
 template<size_t Dimension>
-void main2DSimulation(int forceType, int simType, double delta_t, int dimSimulationArea, int iterationNumber, int numParticles, int mass, int maxVel, int maxRadius, int softening, std::string fileName, int speedUp){
+void main2DSimulation(int forceType, int simType, double delta_t, int dimSimulationArea, int iterationNumber, int numParticles, int mass, int maxVel, int maxRadius, double softening, std::string fileName, int speedUp){
     
     time_t start, end;
     std::vector<Particle<Dimension>> particles; 
@@ -384,10 +384,10 @@ void main2DSimulation(int forceType, int simType, double delta_t, int dimSimulat
     std::ofstream file(fileName);
 
     start = time(NULL);
-    particles = generateRandomParticles<Dimension>(numParticles, dimSimulationArea, 1, mass, maxVel, 1, maxRadius, false);
+    particles = generateRandomParticles<Dimension>(numParticles, dimSimulationArea, (forceType)? -mass:1, mass, maxVel, 1, maxRadius, forceType);
     end = time(NULL);
     std::cout << "Time taken by generateRandomParticles function: " << end - start << " seconds" << std::endl;
-    
+
     printInitialStateOnFile(&particles, dimSimulationArea, fileName, file, iterationNumber, speedUp);
 
     if(simType == 0){
@@ -427,7 +427,7 @@ void main3DSimulation(int forceType, int symType, double delta_t, int dimSimulat
     std::ofstream file(fileName); 
 
     start = time(NULL);
-    particles = generateRandomParticles<Dimension>(numParticles, dimSimulationArea, 1, mass, maxVel, 1, maxRadius, false);
+    particles = generateRandomParticles<Dimension>(numParticles, dimSimulationArea, (forceType)? -mass:1, mass, maxVel, 1, maxRadius, forceType);
     end = time(NULL);
     std::cout << "Time taken by generateRandomParticles function: " << end - start << " seconds" << std::endl;
     
@@ -638,7 +638,7 @@ int main(int argc, char** argv) {
 
         if (strcmp(argv[i], "-soft") == 0) {
              if (++i < argc) {
-                int soft = std::__cxx11::stof(argv[i]);
+                double soft = std::__cxx11::stof(argv[i]);
                 if(soft < 0){ 
                     std::cout << "No feasible value of softening." << std::endl;
                     return 1;
