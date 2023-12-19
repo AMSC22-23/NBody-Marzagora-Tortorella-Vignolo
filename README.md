@@ -24,15 +24,17 @@ or, with the same command, adding the version of python installed on the machine
 (example with python 3.10)
 `python3.10 animation.py`
 
-The program will ask the user some information about the simulation they intend to perform: 
+The program will ask the user if they want to run the default version by pressing 'd'. If any other key is pressed, the program shows the helper list with 
 
-when asked about the type of simulation, insert 0 for serial and 1 for parallel;
+all the parameters that can be changed and the program terminates.
 
-when asked about the type of force, insert c for Coulomb and g for gravitational;
+You then have to run it again, adding the parameters you want to change between two "".
 
-when asked about the number of dimensions of simulation, insert 2 for 2D and 3 for 3D.
+For example, 
+`python3 animation.py "-dim 2 -simT 0"`
 
-If the user provides invalid inputs, the program will ask again until the user provides a valid one.
+Default values are set on serial 2D simulation, gravitational force.
+
 
 # How to run ONLY the computational part
 
