@@ -108,7 +108,7 @@ std::vector<Particle<Dimension>> generateRandomParticles(int N, int posBoundary 
  * @param f Reference to the Force object responsible for calculating particle interactions.
  **/
 template<size_t Dimension>
-void serialSimulation(int it, std::vector<Particle<Dimension>>* particles, int dim, double softening, double delta_t, std::string fileName, std::ofstream& file, Force<Dimension>& f){
+void serialSimulation(int it, std::vector<Particle<Dimension>>* particles, int dim, double softening, double delta_t, std::string fileName, std::ofstream& file, Force<Dimension>& f, int speedup){
     std::array<double,Dimension> force_qk;
 
     for (int z = 0; z < it; ++z){
@@ -136,20 +136,22 @@ void serialSimulation(int it, std::vector<Particle<Dimension>>* particles, int d
             z==it-1? q.update(delta_t):q.updateAndReset(delta_t);
         }
         
-        for (int i = 0; i < (*particles).size(); i++) {
-            Particle<Dimension> &q = (*particles)[i];
-            if (file.is_open()) {
-                file << q.getId() << ",";
-                const auto& pos = q.getPos();
-                for (size_t i = 0; i < Dimension; ++i) {
-                    file << pos[i];
-                    if (i < Dimension - 1) {
-                        file << ",";
+        if(z%speedup==0){
+            for (int i = 0; i < (*particles).size(); i++) {
+                Particle<Dimension> &q = (*particles)[i];
+                if (file.is_open()) {
+                    file << q.getId() << ",";
+                    const auto& pos = q.getPos();
+                    for (size_t i = 0; i < Dimension; ++i) {
+                        file << pos[i];
+                        if (i < Dimension - 1) {
+                            file << ",";
+                        }
                     }
+                    file << std::endl;
+                } else {
+                    std::cout << "Unable to open file";
                 }
-                file << std::endl;
-            } else {
-                std::cout << "Unable to open file";
             }
         }
     }
@@ -390,7 +392,7 @@ void main2DSimulation(int forceType, int simType, double delta_t, int dimSimulat
 
     if(simType == 0){
         start = time(NULL);
-        serialSimulation<Dimension>(iterationNumber, &particles, dimSimulationArea, softening, delta_t, fileName, file, *f);
+        serialSimulation<Dimension>(iterationNumber, &particles, dimSimulationArea, softening, delta_t, fileName, file, *f, speedUp);
         end = time(NULL);
         std::cout << "Time taken by serial simulation: " << end - start << " seconds" << std::endl;
 
@@ -433,7 +435,7 @@ void main3DSimulation(int forceType, int symType, double delta_t, int dimSimulat
 
     if(symType == 0){
         start = time(NULL);
-        serialSimulation<Dimension>(iterationNumber, &particles, dimSimulationArea, softening, delta_t, fileName, file, *f);
+        serialSimulation<Dimension>(iterationNumber, &particles, dimSimulationArea, softening, delta_t, fileName, file, *f, speedUp);
         end = time(NULL);
         std::cout << "Time taken by serial simulation: " << end - start << " seconds" << std::endl;
 
@@ -538,7 +540,7 @@ int main(int argc, char** argv) {
 
         if (strcmp(argv[i], "-delta") == 0) {
              if (++i < argc) {
-                double delta = atoi(argv[i]);
+                double delta = std::__cxx11::stof(argv[i]);
                 if(delta < 0){
                     std::cout << "No feasible delta t." << std::endl;
                     return 1;
@@ -636,7 +638,7 @@ int main(int argc, char** argv) {
 
         if (strcmp(argv[i], "-soft") == 0) {
              if (++i < argc) {
-                int soft = atoi(argv[i]);
+                int soft = std::__cxx11::stof(argv[i]);
                 if(soft < 0){ 
                     std::cout << "No feasible value of softening." << std::endl;
                     return 1;
