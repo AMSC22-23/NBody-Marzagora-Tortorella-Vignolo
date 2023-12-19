@@ -8,13 +8,35 @@ import numpy as np
 from matplotlib.widgets import Button
 import random
 import subprocess
+import sys
+
 
 #write a funcion that compiles and runs the simulation
 def run_simulation():
     subprocess.call(["g++", "-fopenmp", "-I../utils", "../main/main.cpp", "-o", "main"])
     subprocess.call(["./main"])
+#if len(sys.argv) != 2:
+#    subprocess.call(["g++", "-fopenmp", "-I../utils", "../main/main.cpp", "-o", "main"])
+#    subprocess.call(["./main"])
+#else:
+    #given a string bounded by "" in the command line, the string is passed as a parameter
+if len(sys.argv) != 2:
+    subprocess.call(["g++", "-fopenmp", "-I../utils", "../main/main.cpp", "-o", "main"])
+    result = subprocess.call(["./main"])
+else:
+    option = sys.argv[1]
+    subprocess.call(["g++", "-fopenmp", "-I../utils", "../main/main.cpp", "-o", "main"])
+    command = ["./main"] + option.split(" ")
+    result = subprocess.call(command)
 
-run_simulation()
+
+
+#print(command)
+#process = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+#subprocess.call(["./main", option])
+
+
+#run_simulation()
 interval_millisec = 20;  # [milliseconds], duration of the frame
 
 # Open the file for reading
