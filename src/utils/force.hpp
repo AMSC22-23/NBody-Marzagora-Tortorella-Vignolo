@@ -4,7 +4,7 @@
 #include <array>
 #include <cmath>
 
-template<size_t Dimension>
+template<size_t Dimension>//@note, strange that you can write just size_t and not std::size_t
 class Particle;
 
 /**
@@ -58,8 +58,8 @@ class GravitationalForce : public Force<Dimension>{
             double dist = std::sqrt(dist_squared);
             double dist_cubed = dist * dist * dist;
 
-            double gravF = G * q.getProperty() * k.getProperty() / dist_cubed;
-
+            double gravF = G * q.getProperty() * k.getProperty() / dist_cubed;//@note, this is not the correct formula for the gravitational force
+            // you need to divide by the distance squared, not cubed
             std::array<double, Dimension> force_qk;
             for(size_t i = 0; i < Dimension; ++i) force_qk[i] = gravF * pos_diff[i];
 
@@ -94,7 +94,7 @@ class CoulombForce : public Force<Dimension>{
             double dist = std::sqrt(dist_squared);
             double dist_cubed = dist * dist * dist;
 
-            double coulF = K * q.getProperty() * k.getProperty() / dist_cubed;
+            double coulF = K * q.getProperty() * k.getProperty() / dist_cubed;//@note are you sure of the cube
 
             std::array<double, Dimension> force_qk;
             for(size_t i = 0; i < Dimension; ++i) force_qk[i] = -coulF * pos_diff[i];
