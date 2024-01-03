@@ -108,53 +108,79 @@ std::vector<Particle<Dimension>> generateRandomParticles(int N, int posBoundary 
  * @param f Reference to the Force object responsible for calculating particle interactions.
  **/
 template<size_t Dimension>
-void serialSimulation(int it, std::vector<Particle<Dimension>>* particles, int dim, double softening, double delta_t, std::string fileName, std::ofstream& file, Force<Dimension>& f, int speedup){
+void serialSimulation(int it, std::vector<Particle<Dimension>>* particles, int dim, double softening, double delta_t, Force<Dimension>& f, int speedup){
     std::array<double,Dimension> force_qk;
+    //std::ofstream file("../graphics/Coordinates_0.txt");
+    std::FILE* file;
+    std::string fileName = "../graphics/Coordinates_0.txt";
+    const char* re = fileName.c_str();
+    file = fopen(re, "w");
 
-    for (int z = 0; z < it; ++z){
-        for (int i = 0; i < (*particles).size(); ++i) {
-            Particle<Dimension> &q = (*particles)[i];
+    struct timespec start, end;
+    long long elapsed_ns = 0.0;
 
-            if(q.hitsBoundary(dim)){
-                q.manageCollision(q, dim);
-            }
-
-            for (int j = i + 1; j < (*particles).size(); j++) {
-                Particle<Dimension> &k = (*particles)[j];
-                
-                if(q.squareDistance(k) < (((q.getRadius() + k.getRadius())*(q.getRadius() + k.getRadius())))*softening){
-                    
-                    q.manageCollision(k, 0.0);
-                }
-
-                force_qk = f.calculateForce(q, k);
-                q.addForce(force_qk);
-                for(size_t i = 0; i < Dimension; ++i) force_qk[i] = -force_qk[i];
-                k.addForce(force_qk);
-
-            }
-            z==it-1? q.update(delta_t):q.updateAndReset(delta_t);
-        }
-        
-        if(z%speedup==0){
-            for (int i = 0; i < (*particles).size(); i++) {
+    //if (file.is_open()) {
+        for (int z = 0; z < it; ++z){
+            for (int i = 0; i < (*particles).size(); ++i) {
                 Particle<Dimension> &q = (*particles)[i];
-                if (file.is_open()) {
-                    file << q.getId() << ",";
+
+                if(q.hitsBoundary(dim)){
+                    q.manageCollision(q, dim);
+                }
+                
+                for (int j = i + 1; j < (*particles).size(); j++) {
+                    Particle<Dimension> &k = (*particles)[j];
+
+                    
+                    if(q.squareDistance(k) < (((q.getRadius() + k.getRadius())*(q.getRadius() + k.getRadius())))*softening){
+
+                        q.manageCollision(k, 0.0);
+                    }
+                    clock_gettime(CLOCK_MONOTONIC, &start);
+                    force_qk = f.calculateForce(q, k);
+                    clock_gettime(CLOCK_MONOTONIC, &end);
+                    elapsed_ns += (end.tv_sec - start.tv_sec) * 1e9 + (end.tv_nsec - start.tv_nsec);
+
+                    q.addForce(force_qk);
+                    for(size_t i = 0; i < Dimension; ++i) force_qk[i] = -force_qk[i];
+                    k.addForce(for
+                    ce_qk);
+
+                }
+                
+                z==it-1? q.update(delta_t):q.updateAndReset(delta_t);
+            }
+
+            
+
+            if(z%speedup==0){
+                for (int i = 0; i < (*particles).size(); i++) {
+                    Particle<Dimension> &q = (*particles)[i];
+                    //file << q.getId() << ",";
+                    fprintf(file, "%d,", q.getId());
                     const auto& pos = q.getPos();
                     for (size_t i = 0; i < Dimension; ++i) {
-                        file << pos[i];
+                        //file << pos[i];
+                        fprintf(file, "%f", pos[i]);
                         if (i < Dimension - 1) {
-                            file << ",";
+                            //file << ",";
+                            fprintf(file, ",");
                         }
                     }
-                    file << std::endl;
-                } else {
-                    std::cout << "Unable to open file";
+                    //file << std::endl;
+                    fprintf(file, "\n");
                 }
             }
+
+            
         }
-    }
+        //file.close();
+        fclose(file);
+    //} else {
+        //std::cout << "Unable to open file";
+    //}
+    std::cout << "Time taken by write on files serial: " << elapsed_ns << " nanoseconds" << std::endl;
+
 }
 
 /**
@@ -179,86 +205,230 @@ void serialSimulation(int it, std::vector<Particle<Dimension>>* particles, int d
  **/
 
 template<size_t Dimension>
-void parallelSimulation(int it, std::vector<Particle<Dimension>>* particles, int dim, double softening, double delta_t, std::string fileName, std::ofstream& file, Force<Dimension>& f, int u){
+void parallelSimulation(int it, std::vector<Particle<Dimension>>* particles, int dim, double softening, double delta_t, Force<Dimension>& f, int u, size_t numFilesAndThreads){
 
-    particles->size() < omp_get_max_threads()? omp_set_num_threads(particles->size()):omp_set_num_threads(omp_get_max_threads());  
-    int num_threads = omp_get_max_threads();
+    struct timespec start, end;
+    //an array of elapsed time of dim 5
+    std::array<long long, 6> elapsed_ns = {0,0,0,0,0,0};
+    int id_thread;
+    int num_particles = (*particles).size();
 
+    std::array<double,Dimension> force_qk;
+    bool filesOpen = true;
+    //particles->size() < omp_get_max_threads()? omp_set_num_threads(particles->size()):omp_set_num_threads(omp_get_max_threads());  
+    int num_threads = numFilesAndThreads;
     std::vector<std::vector<std::array<double, Dimension>>> local_forces(omp_get_max_threads(), std::vector<std::array<double, Dimension>>(particles->size()));
-    
+    //create an array of file pointers to write the coordinates of the particles
+    std::vector<std::ofstream> coordinateFiles(numFilesAndThreads);
     std::array<double,Dimension> force;
+    std::ofstream file;
+    std::vector<std::FILE*> files(numFilesAndThreads);
 
-    for (int z = 0; z < it; ++z){
-        #pragma omp parallel shared(particles, f, it, delta_t, fileName, file, softening, dim, num_threads) private(force)
-        {
-           #pragma omp for schedule(dynamic, u)
-           for (int i = 0; i < (*particles).size(); ++i) {
-               Particle<Dimension> &k = (*particles)[i];
+    //initialize all files
+    for (int i = 0; i < numFilesAndThreads; ++i) {
+        //coordinateFiles[i].open("../graphics/Coordinates_" + std::to_string(i) + ".txt");
+        std::string fileName = "../graphics/Coordinates_" + std::to_string(i) + ".txt";
+        const char* re = fileName.c_str();
+        files[i] = fopen(re, "w");
+    }
+    Particle<Dimension> *q;
+    Particle<Dimension> *k;
 
-               
-               if(k.hitsBoundary(dim)){
-                   k.manageCollision(k, dim);
-               }
+    //control if all files are open
+    //for (int i = 0; i < numFilesAndThreads && filesOpen; ++i) {
+    //    if (!coordinateFiles[i].is_open()) {
+    //        std::cout << "Unable to open file in parallelSimulation ";
+    //        filesOpen = false;
+    //    }
+    //}
+    clock_gettime(CLOCK_MONOTONIC, &start);
+    //if(filesOpen)
+    #pragma omp parallel shared(particles, f, it, delta_t, coordinateFiles, softening, dim, num_threads, files, num_particles) private(force, id_thread, file, k, q)
+    {
+        id_thread = omp_get_thread_num();
+    {
+        for (int z = 0; z < it; ++z){
+            //#pragma omp parallel shared(particles, f, it, delta_t, coordinateFiles, softening, dim, num_threads, files) private(force, id_thread, file)
+            //{
+                //id_thread = omp_get_thread_num();
 
-               for(int j = i+1; j < (*particles).size(); ++j){
-                   Particle<Dimension> &q = (*particles)[j];
+               #pragma omp single 
+               {
+                //std::cout << "Thread number: " << z << std::endl;
+                if(z==0)
+                {
+                    clock_gettime(CLOCK_MONOTONIC, &end);
+                    elapsed_ns[5] += (end.tv_sec - start.tv_sec) * 1e9 + (end.tv_nsec - start.tv_nsec);}
+                clock_gettime(CLOCK_MONOTONIC, &start);}
 
-                   if(q.squareDistance(k) < (((q.getRadius() + k.getRadius())*(q.getRadius() + k.getRadius())))*softening){
-                       q.manageCollision(k, 0.0);
+               #pragma omp for schedule(dynamic, u)
+               for (int i = 0; i < num_particles; ++i) {
+                   //assign the particle to k
+                    k = &(*particles)[i];
+
+
+                   if(k->hitsBoundary(dim)){
+                       k->manageCollision(*k, dim);
                    }
 
-                   force = f.calculateForce(k, q);
-                   for (int y = 0; y < Dimension; ++y) {
-                       local_forces[omp_get_thread_num()][i][y] += force[y];
-                       local_forces[omp_get_thread_num()][j][y] -= force[y];
+                   for(int j = i+1; j < num_particles; ++j){
+                       q = &(*particles)[j];
+
+                       if(q->squareDistance(*k) < (((q->getRadius() + k->getRadius())*(q->getRadius() + k->getRadius())))*softening){
+                           q->manageCollision(*k, 0.0);
+                       }
+
+                       force = f.calculateForce(*k, *q);
+                       for (int y = 0; y < Dimension; ++y) {
+                           local_forces[id_thread][i][y] += force[y];
+                           local_forces[id_thread][j][y] -= force[y];
+                       }
                    }
                }
-           }
 
-           #pragma omp for schedule(static, particles->size()/omp_get_num_threads())
-           for (int i = 0; i < (*particles).size(); ++i) {
-               Particle<Dimension> &q = (*particles)[i];
-               q.resetForce();
-               for (int j = 0; j < num_threads; ++j) {
-                   q.addForce(local_forces[j][i]);
-               }
-           }
+                #pragma omp single
+                {
+                    clock_gettime(CLOCK_MONOTONIC, &end);
+                    elapsed_ns[0] += (end.tv_sec - start.tv_sec) * 1e9 + (end.tv_nsec - start.tv_nsec);
+                }     
 
+               #pragma omp single
+               clock_gettime(CLOCK_MONOTONIC, &start);
 
-           #pragma omp for schedule(static, 1)
-           for(int k = 0; k < num_threads; ++k){
-               for (int j = 0; j < (*particles).size(); ++j) {
-                   for (int y = 0; y < Dimension; ++y) {
-                       local_forces[k][j][y] = 0.0;
+               #pragma omp for schedule(static, particles->size()/omp_get_num_threads())
+               for (int i = 0; i < num_particles; ++i) {
+                   q = &(*particles)[i];
+                   q->resetForce();
+                   for (int j = 0; j < num_threads; ++j) {
+                       q->addForce(local_forces[j][i]);
                    }
                }
-           }
 
-           #pragma omp for schedule(static, particles->size()/num_threads)
-           for (int i = 0; i < (*particles).size(); ++i) {
-               Particle<Dimension> &q = (*particles)[i];
-               q.update(delta_t);
-           }        
-        }
-        
-        if(z%u==0){
-            for (int i = 0; i < (*particles).size(); i++) {
-                Particle<Dimension> &q = (*particles)[i];
-                if (file.is_open()) {
-                    file << q.getId() << ",";
-                    const auto& pos = q.getPos();
-                    for (size_t i = 0; i < Dimension; ++i) {
-                        file << pos[i];
-                        if (i < Dimension - 1) {
-                            file << ",";
-                        }   
-                    }
-                    file << std::endl;
-                } else {
-                    std::cout << "Unable to open file in parallelSimulation ";
+                #pragma omp single
+                {
+                    clock_gettime(CLOCK_MONOTONIC, &end);
+                    elapsed_ns[1] += (end.tv_sec - start.tv_sec) * 1e9 + (end.tv_nsec - start.tv_nsec);
+                }     
+
+               #pragma omp single
+               clock_gettime(CLOCK_MONOTONIC, &start);
+
+               #pragma omp for schedule(static, 1)
+               for(int k = 0; k < num_threads; ++k){
+                   for (int j = 0; j < num_particles; ++j) {
+                       for (int y = 0; y < Dimension; ++y) {
+                           local_forces[k][j][y] = 0.0;
+                       }
+                   }
+               }
+
+                #pragma omp single
+                {
+                    clock_gettime(CLOCK_MONOTONIC, &end);
+                    elapsed_ns[2] += (end.tv_sec - start.tv_sec) * 1e9 + (end.tv_nsec - start.tv_nsec);
+                }     
+
+               #pragma omp single
+               clock_gettime(CLOCK_MONOTONIC, &start);
+
+               #pragma omp for schedule(static, particles->size()/num_threads)
+               for (int i = 0; i < num_particles; ++i) {
+                   q = &(*particles)[i];
+                   q->update(delta_t);
                 }
+
+                #pragma omp single
+                {
+                    clock_gettime(CLOCK_MONOTONIC, &end);
+                    elapsed_ns[3] += (end.tv_sec - start.tv_sec) * 1e9 + (end.tv_nsec - start.tv_nsec);
+                }     
+
+                #pragma omp single
+                clock_gettime(CLOCK_MONOTONIC, &start);
+
+                if(z%u==0){
+                    #pragma omp for schedule(static, particles->size()/num_threads) //nowait
+                    //#pragma omp single nowait
+                    for (int i = 0; i < num_particles; i++) {
+                        q = &(*particles)[i];
+                        //coordinateFiles[id_thread] << q.getId() << ",";
+                        fprintf(files[id_thread], "%d,", q->getId());
+                        const auto& pos = q->getPos();
+                        for (size_t i = 0; i < Dimension; ++i) {
+                            //coordinateFiles[id_thread] << pos[i];
+                            fprintf(files[id_thread], "%f", pos[i]);
+                            if (i < Dimension - 1) {
+                                //coordinateFiles[id_thread] << ",";
+                                fprintf(files[id_thread], ",");
+                            }   
+                        }
+                        //coordinateFiles[id_thread] << std::endl;
+                        fprintf(files[id_thread], "\n");
+                    }
+                }
+                //#pragma omp sections
+                //{
+                //    #pragma omp section
+                //    {
+                //        if(z%u==0){
+                //            for (int i = 0; i < (*particles).size()/2; i++) {
+                //                Particle<Dimension> &q = (*particles)[i];
+                //                //coordinateFiles[0] << q.getId() << ",";
+                //                fprintf(files[0], "%d,", q.getId());
+                //                const auto& pos = q.getPos();
+                //                for (size_t i = 0; i < Dimension; ++i) {
+                //                    //coordinateFiles[0] << pos[i];
+                //                    fprintf(files[0], "%f", pos[i]);
+                //                    if (i < Dimension - 1) {
+                //                        //coordinateFiles[0] << ",";
+                //                        fprintf(files[0], ",");
+                //                    }   
+                //                }
+                //                //coordinateFiles[0] << std::endl;
+                //                fprintf(files[0], "\n");
+                //            }
+                //        }
+                //    }
+                //    #pragma omp section
+                //    {
+                //        if(z%u==0){
+                //            for (int i = (*particles).size()/2; i < (*particles).size(); i++) {
+                //                Particle<Dimension> &q = (*particles)[i];
+                //                //coordinateFiles[1] << q.getId() << ",";
+                //                fprintf(files[1], "%d,", q.getId());
+                //                const auto& pos = q.getPos();
+                //                for (size_t i = 0; i < Dimension; ++i) {
+                //                    //coordinateFiles[1] << pos[i];
+                //                    fprintf(files[1], "%f", pos[i]);
+                //                    if (i < Dimension - 1) {
+                //                        //coordinateFiles[0] << ",";
+                //                        fprintf(files[1], ",");
+                //                    }   
+                //                }
+                //                //coordinateFiles[1] << std::endl;
+                //                fprintf(files[1], "\n");
+                //            }
+                //        }
+                //    }
+                //}
+
+                #pragma omp single 
+                {
+                    clock_gettime(CLOCK_MONOTONIC, &end);
+                    elapsed_ns[4] += (end.tv_sec - start.tv_sec) * 1e9 + (end.tv_nsec - start.tv_nsec);
+                }         
             }
         }
+        #pragma omp for schedule(static, 1)
+        for(int i = 0; i < numFilesAndThreads; ++i){
+            //coordinateFiles[i].close();
+            fclose(files[i]);
+        }
+    }
+
+    for (int i = 0; i < 6; ++i)
+    {
+        std::cout << "Time taken by parallelSimulation task " << i << ": " << elapsed_ns[i] << " nanoseconds" << std::endl;
     }
 }
 
@@ -335,15 +505,14 @@ std::vector<Particle<Dimension>> generateOrbitTestParticles(double size, double 
  **/
 
 template<size_t Dimension>
-void printInitialStateOnFile(std::vector<Particle<Dimension>>* particles, int dim, std::string fileName, std::ofstream& file, int it, int speedUp){
-    
+void printInitialStateOnFile(std::vector<Particle<Dimension>>* particles, int dim, std::string fileName, int it, int speedUp, size_t numFilesAndThreads){
+    std::ofstream file(fileName); 
     if (file.is_open()) {
-
-        
         file << (*particles).size() << std::endl;
         file << dim << std::endl;
         file << Dimension << std::endl;
         file << it / speedUp << std::endl;
+        file << numFilesAndThreads << std::endl;
 
         for (const Particle<Dimension> & p : (*particles)) 
             file << p.getRadius() << std::endl;
@@ -359,6 +528,7 @@ void printInitialStateOnFile(std::vector<Particle<Dimension>>* particles, int di
     } else {
         std::cout << "Unable to open file";
     }
+    file.close();
 }
 
 
@@ -376,34 +546,37 @@ void main2DSimulation(int forceType, int simType, double delta_t, int dimSimulat
     
     time_t start, end;
     std::vector<Particle<Dimension>> particles; 
-    
+    size_t numFilesAndThreads;
     Force<Dimension>* f;
     if(forceType == 1 ) f = new CoulombForce<Dimension>();
     else f = new GravitationalForce<Dimension>();
-    
-    std::ofstream file(fileName);
 
     start = time(NULL);
     particles = generateRandomParticles<Dimension>(numParticles, dimSimulationArea, (forceType)? -mass:1, mass, maxVel, 1, maxRadius, forceType);
     end = time(NULL);
     std::cout << "Time taken by generateRandomParticles function: " << end - start << " seconds" << std::endl;
 
-    printInitialStateOnFile(&particles, dimSimulationArea, fileName, file, iterationNumber, speedUp);
+    //FILE COORDINATES MANAGER
+    //set number of files: 1 if serial simulation, min(num_particles, num_max_threads) if parallel simulation
+    if(!simType) numFilesAndThreads = 1;
+    else{
+        particles.size() < omp_get_max_threads()? omp_set_num_threads(particles.size()):omp_set_num_threads(omp_get_max_threads());  
+        numFilesAndThreads = omp_get_max_threads();
+    }
+    printInitialStateOnFile(&particles, dimSimulationArea, fileName, iterationNumber, speedUp, numFilesAndThreads);
 
     if(simType == 0){
         start = time(NULL);
-        serialSimulation<Dimension>(iterationNumber, &particles, dimSimulationArea, softening, delta_t, fileName, file, *f, speedUp);
+        serialSimulation<Dimension>(iterationNumber, &particles, dimSimulationArea, softening, delta_t, *f, speedUp);
         end = time(NULL);
         std::cout << "Time taken by serial simulation: " << end - start << " seconds" << std::endl;
 
     }else if(simType == 1){
         start = time(NULL);
-        parallelSimulation<Dimension>(iterationNumber, &particles, dimSimulationArea, softening, delta_t, fileName, file, *f, speedUp);
+        parallelSimulation<Dimension>(iterationNumber, &particles, dimSimulationArea, softening, delta_t, *f, speedUp, numFilesAndThreads);
         end = time(NULL);
         std::cout << "Time taken by parallel simulation: " << end - start << " seconds" << std::endl;
     }
-
-    file.close();
 }
 
 /**
@@ -421,32 +594,36 @@ void main3DSimulation(int forceType, int symType, double delta_t, int dimSimulat
     time_t start, end; 
     std::vector<Particle<Dimension>> particles;
     Force<Dimension>* f;
+    size_t numFilesAndThreads;
     if(forceType == 1 ) f = new CoulombForce<Dimension>();
     else  f = new GravitationalForce<Dimension>(); 
-
-    std::ofstream file(fileName); 
 
     start = time(NULL);
     particles = generateRandomParticles<Dimension>(numParticles, dimSimulationArea, (forceType)? -mass:1, mass, maxVel, 1, maxRadius, forceType);
     end = time(NULL);
     std::cout << "Time taken by generateRandomParticles function: " << end - start << " seconds" << std::endl;
-    
-    printInitialStateOnFile(&particles, dimSimulationArea, fileName, file, iterationNumber, speedUp);
+
+    //FILE COORDINATES MANAGER
+    //set number of files: 1 if serial simulation, min(num_particles, num_max_threads) if parallel simulation
+    if(!symType) numFilesAndThreads = 1;
+    else{
+        particles.size() < omp_get_max_threads()? omp_set_num_threads(particles.size()):omp_set_num_threads(omp_get_max_threads());  
+        numFilesAndThreads = omp_get_max_threads();
+    }
+    printInitialStateOnFile(&particles, dimSimulationArea, fileName, iterationNumber, speedUp, numFilesAndThreads);
 
     if(symType == 0){
         start = time(NULL);
-        serialSimulation<Dimension>(iterationNumber, &particles, dimSimulationArea, softening, delta_t, fileName, file, *f, speedUp);
+        serialSimulation<Dimension>(iterationNumber, &particles, dimSimulationArea, softening, delta_t, *f, speedUp);
         end = time(NULL);
         std::cout << "Time taken by serial simulation: " << end - start << " seconds" << std::endl;
 
     }else if(symType == 1){
        start = time(NULL);
-        parallelSimulation<Dimension>(iterationNumber, &particles, dimSimulationArea, softening, delta_t, fileName, file, *f, speedUp);
+        parallelSimulation<Dimension>(iterationNumber, &particles, dimSimulationArea, softening, delta_t, *f, speedUp, numFilesAndThreads);
         end = time(NULL);
         std::cout << "Time taken by parallel simulation: " << end - start << " seconds" << std::endl;
     } 
-
-    file.close();
 }
 
 void showHelp() {
@@ -474,18 +651,18 @@ void showHelp() {
 int main(int argc, char** argv) {
 
     int dim = 2; 
-    int simType = 0;
+    int simType = 1;
     int forceType = 0;
     double delta_t = 0.01;
-    int dimSimulationArea = 500; 
+    int dimSimulationArea = 10000; 
     int iterationNumber = 1000; 
-    int numParticles = 50;
+    int numParticles = 1000;
     int mass = 50; 
     int maxVel = 50; 
     int maxRadius = 5; 
     double softening = 0.7;
     int speedUp = 1;
-    std::string fileName = "../graphics/coordinates.txt";
+    std::string fileName = "../graphics/Info.txt";
 
      if (argc < 2) {
         char a;
