@@ -143,8 +143,7 @@ void serialSimulation(int it, std::vector<Particle<Dimension>>* particles, int d
 
                     q.addForce(force_qk);
                     for(size_t i = 0; i < Dimension; ++i) force_qk[i] = -force_qk[i];
-                    k.addForce(for
-                    ce_qk);
+                    k.addForce(force_qk);
 
                 }
                 
