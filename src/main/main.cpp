@@ -1,6 +1,7 @@
 #include <vector>
 #include "particle.hpp" 
 #include "force.hpp" 
+#include "treenode.hpp"
 #include <cstdlib> 
 #include <ctime>
 #include <iostream>
@@ -31,6 +32,41 @@
  * @param type Type flag for particles to identify either they are particles of the gravitational or the Coulomb force (default: false, which refers to gravitational force).
  * @return A vector of particles with randomly generated properties.
  **/
+
+
+
+// Function to create the tree structure from a vector of particles
+template<size_t Dimension>
+TreeNode<Dimension>* createTree(std::vector<Particle<Dimension>>& particles) {
+    if (particles.empty()) {
+        return nullptr;
+    }
+
+    // Determine the simulation boundaries (this might need to be adjusted)
+    float minX = particles[0].getPos()[0];
+    float maxX = minX;
+    float minY = particles[0].getPos()[1];
+    float maxY = minY;
+
+    for (const auto& p : particles) {
+        if (p.getPos()[0] < minX) minX = p.getPos()[0];
+        if (p.getPos()[0] > maxX) maxX = p.getPos()[0];
+        if (p.getPos()[1] < minY) minY = p.getPos()[1];
+        if (p.getPos()[1] > maxY) maxY = p.getPos()[1];
+    }
+
+    // Create the root of the tree
+    float width = std::max(maxX - minX, maxY - minY);
+    TreeNode<Dimension>* root = new TreeNode<Dimension>(minX + width / 2, minY + width / 2, width);
+
+    // Insert each particle into the tree
+    for (auto& particle : particles) {
+        root->insert(&particle);
+    }
+
+    return root;
+}
+
 template<size_t Dimension>
 std::vector<Particle<Dimension>> generateRandomParticles(int N, int posBoundary = 100, int minProperty = 1, int maxProperty = 99, int maxVel = 100, int minRadius = 0, int maxRadius = 15, bool type = false) {
 
@@ -376,6 +412,8 @@ void main2DSimulation(int forceType, int simType, double delta_t, int dimSimulat
     
     time_t start, end;
     std::vector<Particle<Dimension>> particles; 
+    numParticles = 5;
+    dimSimulationArea = 80;
     
     Force<Dimension>* f;
     if(forceType == 1 ) f = new CoulombForce<Dimension>();
@@ -388,22 +426,30 @@ void main2DSimulation(int forceType, int simType, double delta_t, int dimSimulat
     end = time(NULL);
     std::cout << "Time taken by generateRandomParticles function: " << end - start << " seconds" << std::endl;
 
-    printInitialStateOnFile(&particles, dimSimulationArea, fileName, file, iterationNumber, speedUp);
+    TreeNode<Dimension>* treeRoot = createTree(particles);
 
-    if(simType == 0){
-        start = time(NULL);
-        serialSimulation<Dimension>(iterationNumber, &particles, dimSimulationArea, softening, delta_t, fileName, file, *f, speedUp);
-        end = time(NULL);
-        std::cout << "Time taken by serial simulation: " << end - start << " seconds" << std::endl;
-
-    }else if(simType == 1){
-        start = time(NULL);
-        parallelSimulation<Dimension>(iterationNumber, &particles, dimSimulationArea, softening, delta_t, fileName, file, *f, speedUp);
-        end = time(NULL);
-        std::cout << "Time taken by parallel simulation: " << end - start << " seconds" << std::endl;
+     // After building the tree
+    if (treeRoot != nullptr) {
+        treeRoot->display(); // Display the tree structure
     }
 
-    file.close();
+    delete treeRoot;
+    //printInitialStateOnFile(&particles, dimSimulationArea, fileName, file, iterationNumber, speedUp);
+//
+    //if(simType == 0){
+    //    start = time(NULL);
+    //    serialSimulation<Dimension>(iterationNumber, &particles, dimSimulationArea, softening, delta_t, fileName, file, *f, speedUp);
+    //    end = time(NULL);
+    //    std::cout << "Time taken by serial simulation: " << end - start << " seconds" << std::endl;
+//
+    //}else if(simType == 1){
+    //    start = time(NULL);
+    //    parallelSimulation<Dimension>(iterationNumber, &particles, dimSimulationArea, softening, delta_t, fileName, file, *f, speedUp);
+    //    end = time(NULL);
+    //    std::cout << "Time taken by parallel simulation: " << end - start << " seconds" << std::endl;
+    //}
+//
+    //file.close();
 }
 
 /**
@@ -680,6 +726,7 @@ int main(int argc, char** argv) {
         }
         
     }
+    
 
     if(dim == 2) {
         main2DSimulation<2>(forceType, simType, delta_t, dimSimulationArea, iterationNumber, numParticles, mass, maxVel, maxRadius, softening, fileName, speedUp);

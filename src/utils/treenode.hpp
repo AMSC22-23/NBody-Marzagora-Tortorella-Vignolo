@@ -2,7 +2,10 @@
 #define TREENODE_H
 
 #include <array>
+#include <vector>
 #include "particle.hpp"  
+
+using namespace std;
 
 template<size_t Dimension>
 class Particle;
@@ -12,10 +15,10 @@ class TreeNode {
 public:
     // Constructor for the TreeNode class
     // Initializes a TreeNode with specified x, y coordinates and width (w)
-    TreeNode(float x, float y, float w) 
+    TreeNode(double x, double y, double w) 
         : x(x), y(y), w(w), leaf(true), particle(nullptr), 
-          totalCenter(Vector<Dimension>()), center(nullptr), 
-          totalMass(0.0f), count(0) {
+          totalCenter(std::array<double, Dimension>()), center(nullptr), 
+          totalMass(0.0), count(0) {
         children.fill(nullptr);  // Initialize all children pointers to nullptr
     }
 
@@ -26,7 +29,7 @@ public:
             delete child;  // Delete each dynamically allocated child
         }
     }
-
+ 
     // Method to split the TreeNode into four child nodes
     // This is typically used in quadtree implementations
     void split() {
@@ -49,61 +52,6 @@ public:
         // Implement the logic to split the node into four children
     }
 
-    // Method to determine which child node a given vector belongs to
-    // This is used to decide in which quadrant a point lies
-    int which(const Vector<Dimension>& v) {
-        // Implement the logic to determine the appropriate quadrant
-        return 0;  // Placeholder return value
-    }
-
-    // Method to insert a new Particle into the TreeNode
-    // Handles the logic of placing the particle in the correct node
-    void insert(Particle<Dimension>* newP) {
-        updateAttributes(newParticle);
-        if (leaf) {
-            if (particle == nullptr) {
-                // Node is empty, place the particle here
-                particle = newParticle;
-            } else {
-                // Node is a leaf but already contains a particle
-                split(); // Split the node
-
-                // Reinsert the existing particle
-                int existingParticleIndex = getQuadrantIndex(particle->getPosition()[0], 
-                                                            particle->getPosition()[1], x, y);
-                children[existingParticleIndex]->insert(particle);
-
-                // Insert the new particle
-                int newParticleIndex = getQuadrantIndex(newParticle->getPosition()[0], 
-                                                        newParticle->getPosition()[1], x, y);
-                children[newParticleIndex]->insert(newParticle);
-
-                particle = nullptr; // Clear the particle pointer after reinsertion
-            }
-        } else {
-            // Node is not a leaf, find the correct child for the new particle
-            int index = getQuadrantIndex(newParticle->getPosition()[0], 
-                                        newParticle->getPosition()[1], x, y);
-            children[index]->insert(newParticle);
-        }
-    }
-
-    // Method to display the TreeNode
-    // This could be a graphical representation or textual output
-    void display() {
-        // Implement the logic for displaying the TreeNode
-    }
-
-private:
-    float x, y, w;  // x, y coordinates and width of the TreeNode region
-    std::array<TreeNode<Dimension>*, 4> children;  // Array of pointers to child TreeNodes
-    bool leaf;  // Flag to indicate if the TreeNode is a leaf node
-    Particle<Dimension>* particle;  // Pointer to a Particle stored in the TreeNode
-    Vector<Dimension> totalCenter;  // Total center of mass for the TreeNode
-    Vector<Dimension>* center;  // Center of mass for the TreeNode
-    float totalMass;  // Total mass of all particles in the TreeNode
-    int count;  // Count of particles in the TreeNode
-
     // Helper function to determine the quadrant index for a given particle
     int getQuadrantIndex(float x, float y, float centerX, float centerY) {
         bool isLeft = x < centerX;
@@ -117,11 +65,78 @@ private:
         return -1; // Should not happen :D
     }
 
+    // Method to insert a new Particle into the TreeNode
+    // Handles the logic of placing the particle in the correct node
+    void insert( Particle<Dimension>* newParticle) {
+        updateAttributes(newParticle);
+        if (leaf) {
+            if (particle == nullptr) {
+                // Node is empty, place the particle here
+                particle = newParticle;
+            } else {
+                // Node is a leaf but already contains a particle
+                split(); // Split the node
+
+                // Reinsert the existing particle
+                int existingParticleIndex = getQuadrantIndex(particle->getPos()[0], 
+                                                            particle->getPos()[1], x, y);
+                children[existingParticleIndex]->insert(particle);
+
+                // Insert the new particle
+                int newParticleIndex = getQuadrantIndex(newParticle->getPos()[0], 
+                                                        newParticle->getPos()[1], x, y);
+                children[newParticleIndex]->insert(newParticle);
+
+                particle = nullptr; // Clear the particle pointer after reinsertion
+            }
+        } else {
+            // Node is not a leaf, find the correct child for the new particle
+            int index = getQuadrantIndex(newParticle->getPos()[0], 
+                                        newParticle->getPos()[1], x, y);
+            children[index]->insert(newParticle);
+        }
+    }
+
     // Method to update the node's mass and count attributes
     void updateAttributes(Particle<Dimension>* newParticle) {
         totalMass += newParticle->getProperty(); // Property of particle: mass for gravitational force, charge for Coulomb force.
         count++;
+        // update: totalCenter & center
     }
+
+    
+    // Method to display the tree
+    void display(int depth = 0) const {
+        // Print the current node's details
+        std::cout << std::string(depth * 4, ' ') << "Node at depth " << depth 
+                  << ": [" << x << ", " << y << ", " << w << "], "
+                  << "Mass: " << totalMass << ", Particles: " << count << "\n";
+
+        if (leaf) {
+            // If leaf, display the particle if it exists
+            if (particle != nullptr) {
+                std::cout << std::string((depth + 1) * 4, ' ') << "Particle: "
+                          << particle->getId() << ") " << particle->getPos()[0] << ", " << particle->getPos()[1] << "\n"; // Assuming Particle class has toString method
+            }
+        } else {
+            // If not a leaf, recursively display child nodes
+            for (const auto& child : children) {
+                if (child != nullptr) {
+                    child->display(depth + 1);
+                }
+            }
+        }
+    }
+
+private:
+    double x, y, w;  // x, y coordinates and width of the TreeNode region
+    std::array<TreeNode<Dimension>*, 4> children;  // Array of pointers to child TreeNodes
+    bool leaf;  // Flag to indicate if the TreeNode is a leaf node
+    Particle<Dimension>* particle;  // Pointer to a Particle stored in the TreeNode
+    std::array<double, Dimension> totalCenter;  // Total center of mass for the TreeNode
+    std::array<double, Dimension>* center;  // Center of mass for the TreeNode
+    double totalMass;  // Total mass of all particles in the TreeNode
+    int count;  // Count of particles in the TreeNode
 };
 
 #endif // TREENODE_H
