@@ -30,6 +30,22 @@ public:
     // Method to split the TreeNode into four child nodes
     // This is typically used in quadtree implementations
     void split() {
+        float halfWidth = w / 2.0;
+        float quarterWidth = w / 4.0;
+
+        // Create four children
+        children[0] = new TreeNode(x - quarterWidth, y - quarterWidth, halfWidth);
+        children[1] = new TreeNode(x + quarterWidth, y - quarterWidth, halfWidth);
+        children[2] = new TreeNode(x - quarterWidth, y + quarterWidth, halfWidth);
+        children[3] = new TreeNode(x + quarterWidth, y + quarterWidth, halfWidth);
+
+        leaf = false;
+
+        // If there's already a particle in this node, reinsert it into the correct child
+        if (particle != nullptr) {
+            insert(particle);
+            particle = nullptr; // Clear the particle pointer after reinsertion
+        }
         // Implement the logic to split the node into four children
     }
 
@@ -43,7 +59,33 @@ public:
     // Method to insert a new Particle into the TreeNode
     // Handles the logic of placing the particle in the correct node
     void insert(Particle<Dimension>* newP) {
-        // Implement the logic to insert a new Particle
+        updateAttributes(newParticle);
+        if (leaf) {
+            if (particle == nullptr) {
+                // Node is empty, place the particle here
+                particle = newParticle;
+            } else {
+                // Node is a leaf but already contains a particle
+                split(); // Split the node
+
+                // Reinsert the existing particle
+                int existingParticleIndex = getQuadrantIndex(particle->getPosition()[0], 
+                                                            particle->getPosition()[1], x, y);
+                children[existingParticleIndex]->insert(particle);
+
+                // Insert the new particle
+                int newParticleIndex = getQuadrantIndex(newParticle->getPosition()[0], 
+                                                        newParticle->getPosition()[1], x, y);
+                children[newParticleIndex]->insert(newParticle);
+
+                particle = nullptr; // Clear the particle pointer after reinsertion
+            }
+        } else {
+            // Node is not a leaf, find the correct child for the new particle
+            int index = getQuadrantIndex(newParticle->getPosition()[0], 
+                                        newParticle->getPosition()[1], x, y);
+            children[index]->insert(newParticle);
+        }
     }
 
     // Method to display the TreeNode
@@ -61,6 +103,25 @@ private:
     Vector<Dimension>* center;  // Center of mass for the TreeNode
     float totalMass;  // Total mass of all particles in the TreeNode
     int count;  // Count of particles in the TreeNode
+
+    // Helper function to determine the quadrant index for a given particle
+    int getQuadrantIndex(float x, float y, float centerX, float centerY) {
+        bool isLeft = x < centerX;
+        bool isTop = y < centerY;
+
+        if (isLeft && isTop) return 0; // Top-left
+        if (!isLeft && isTop) return 1; // Top-right
+        if (isLeft && !isTop) return 2; // Bottom-left
+        if (!isLeft && !isTop) return 3; // Bottom-right
+
+        return -1; // Should not happen :D
+    }
+
+    // Method to update the node's mass and count attributes
+    void updateAttributes(Particle<Dimension>* newParticle) {
+        totalMass += newParticle->getProperty(); // Property of particle: mass for gravitational force, charge for Coulomb force.
+        count++;
+    }
 };
 
 #endif // TREENODE_H
