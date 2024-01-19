@@ -29,31 +29,32 @@ public:
             delete child;  // Delete each dynamically allocated child
         }
     }
- 
-    // Method to split the TreeNode into four child nodes
-    // This is typically used in quadtree implementations
+
     void split() {
-        float halfWidth = w / 2.0;
-        float quarterWidth = w / 4.0;
+        // Calcola la metà della larghezza e un quarto della larghezza per determinare i centri dei nuovi nodi figli
+        double halfWidth = w / 2.0;
+        double quarterWidth = w / 4.0;
 
-        // Create four children
-        children[0] = new TreeNode(x - quarterWidth, y - quarterWidth, halfWidth);
-        children[1] = new TreeNode(x + quarterWidth, y - quarterWidth, halfWidth);
-        children[2] = new TreeNode(x - quarterWidth, y + quarterWidth, halfWidth);
-        children[3] = new TreeNode(x + quarterWidth, y + quarterWidth, halfWidth);
-
-        leaf = false;
-
-        // If there's already a particle in this node, reinsert it into the correct child
-        if (particle != nullptr) {
-            insert(particle);
-            particle = nullptr; // Clear the particle pointer after reinsertion
+        // Assicurati che i nodi figli siano nulli prima di crearne di nuovi
+        for (auto& child : children) {
+            if (child != nullptr) {
+                delete child;
+                child = nullptr;
+            }
         }
-        // Implement the logic to split the node into four children
+
+        // Crea quattro nuovi nodi figli
+        children[0] = new TreeNode(x - quarterWidth, y - quarterWidth, halfWidth); // Quadrante in alto a sinistra
+        children[1] = new TreeNode(x + quarterWidth, y - quarterWidth, halfWidth); // Quadrante in alto a destra
+        children[2] = new TreeNode(x - quarterWidth, y + quarterWidth, halfWidth); // Quadrante in basso a sinistra
+        children[3] = new TreeNode(x + quarterWidth, y + quarterWidth, halfWidth); // Quadrante in basso a destra
+
+        // Imposta il nodo corrente come non foglia
+        leaf = false;
     }
 
     // Helper function to determine the quadrant index for a given particle
-    int getQuadrantIndex(float x, float y, float centerX, float centerY) {
+    int getQuadrantIndex(double x, double y, double centerX, double centerY) {
         bool isLeft = x < centerX;
         bool isTop = y < centerY;
 
@@ -65,35 +66,37 @@ public:
         return -1; // Should not happen :D
     }
 
-    // Method to insert a new Particle into the TreeNode
-    // Handles the logic of placing the particle in the correct node
-    void insert( Particle<Dimension>* newParticle) {
-        updateAttributes(newParticle);
-        if (leaf) {
-            if (particle == nullptr) {
-                // Node is empty, place the particle here
-                particle = newParticle;
-            } else {
-                // Node is a leaf but already contains a particle
-                split(); // Split the node
+    void insert(Particle<Dimension>* newParticle) {
+        // Se il nodo è una foglia, ma non contiene ancora una particella
+        if (leaf && particle == nullptr) {
+            particle = newParticle; // Inserisci la particella qui
+            return;
+        }
 
-                // Reinsert the existing particle
-                int existingParticleIndex = getQuadrantIndex(particle->getPos()[0], 
-                                                            particle->getPos()[1], x, y);
+        // Se il nodo è una foglia e contiene già una particella, bisogna dividerlo
+        if (leaf && particle != nullptr) {
+            split(); // Divide il nodo in 4 nodi figli
+
+            // Reinserisci la particella esistente nei nuovi nodi figli
+            int existingParticleIndex = getQuadrantIndex(particle->getPos()[0], particle->getPos()[1], x, y);
+            if (existingParticleIndex != -1) {
                 children[existingParticleIndex]->insert(particle);
-
-                // Insert the new particle
-                int newParticleIndex = getQuadrantIndex(newParticle->getPos()[0], 
-                                                        newParticle->getPos()[1], x, y);
-                children[newParticleIndex]->insert(newParticle);
-
-                particle = nullptr; // Clear the particle pointer after reinsertion
+            } else {
+                cerr << "Errore: indice del quadrante non valido durante il reinserimento." << endl;
             }
+            particle = nullptr; // Pulisci il puntatore della particella dopo il reinserimento
+        }
+
+        // Inserisci la nuova particella nel nodo figlio appropriato
+        int newParticleIndex = getQuadrantIndex(newParticle->getPos()[0], newParticle->getPos()[1], x, y);
+        if (newParticleIndex != -1) {
+            if (children[newParticleIndex] == nullptr) {
+                cerr << "Errore: nodo figlio non inizializzato." << endl;
+                return;
+            }
+            children[newParticleIndex]->insert(newParticle);
         } else {
-            // Node is not a leaf, find the correct child for the new particle
-            int index = getQuadrantIndex(newParticle->getPos()[0], 
-                                        newParticle->getPos()[1], x, y);
-            children[index]->insert(newParticle);
+            cerr << "Errore: indice del quadrante non valido per la nuova particella." << endl;
         }
     }
 

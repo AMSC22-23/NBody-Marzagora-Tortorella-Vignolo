@@ -37,26 +37,21 @@
 
 // Function to create the tree structure from a vector of particles
 template<size_t Dimension>
-TreeNode<Dimension>* createTree(std::vector<Particle<Dimension>>& particles) {
+TreeNode<Dimension>* createTree(std::vector<Particle<Dimension>>& particles, double dimSimulationArea) {
     if (particles.empty()) {
         return nullptr;
     }
 
     // Determine the simulation boundaries (this might need to be adjusted)
-    float minX = particles[0].getPos()[0];
-    float maxX = minX;
-    float minY = particles[0].getPos()[1];
-    float maxY = minY;
+    double minX =  -1 * dimSimulationArea * 0.5;
+    double maxX = dimSimulationArea * 0.5;
+    double minY = minX;
+    double maxY = maxX;
 
-    for (const auto& p : particles) {
-        if (p.getPos()[0] < minX) minX = p.getPos()[0];
-        if (p.getPos()[0] > maxX) maxX = p.getPos()[0];
-        if (p.getPos()[1] < minY) minY = p.getPos()[1];
-        if (p.getPos()[1] > maxY) maxY = p.getPos()[1];
-    }
+    std::cout<< dimSimulationArea<<"->"<< minX << ", " << maxX <<endl;
 
     // Create the root of the tree
-    float width = std::max(maxX - minX, maxY - minY);
+    double width = std::max(maxX - minX, maxY - minY);
     TreeNode<Dimension>* root = new TreeNode<Dimension>(minX + width / 2, minY + width / 2, width);
 
     // Insert each particle into the tree
@@ -412,7 +407,7 @@ void main2DSimulation(int forceType, int simType, double delta_t, int dimSimulat
     
     time_t start, end;
     std::vector<Particle<Dimension>> particles; 
-    numParticles = 5;
+    numParticles = 7;
     dimSimulationArea = 80;
     
     Force<Dimension>* f;
@@ -426,7 +421,7 @@ void main2DSimulation(int forceType, int simType, double delta_t, int dimSimulat
     end = time(NULL);
     std::cout << "Time taken by generateRandomParticles function: " << end - start << " seconds" << std::endl;
 
-    TreeNode<Dimension>* treeRoot = createTree(particles);
+    TreeNode<Dimension>* treeRoot = createTree(particles, dimSimulationArea);
 
      // After building the tree
     if (treeRoot != nullptr) {
