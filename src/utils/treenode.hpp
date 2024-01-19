@@ -67,6 +67,8 @@ public:
     }
 
     void insert(Particle<Dimension>* newParticle) {
+        updateAttributes(newParticle);
+
         // Se il nodo è una foglia, ma non contiene ancora una particella
         if (leaf && particle == nullptr) {
             particle = newParticle; // Inserisci la particella qui
@@ -109,7 +111,7 @@ public:
 
     
     // Method to display the tree
-    void display(int depth = 0) const {
+    void printTree(int depth = 0) const {
         // Print the current node's details
         std::cout << std::string(depth * 4, ' ') << "Node at depth " << depth 
                   << ": [" << x << ", " << y << ", " << w << "], "
@@ -119,13 +121,13 @@ public:
             // If leaf, display the particle if it exists
             if (particle != nullptr) {
                 std::cout << std::string((depth + 1) * 4, ' ') << "Particle: "
-                          << particle->getId() << ") " << particle->getPos()[0] << ", " << particle->getPos()[1] << "\n"; // Assuming Particle class has toString method
+                          << particle->getId() << ") " << particle->getPos()[0] << ", " << particle->getPos()[1] <<". mass: "<< particle->getProperty()<<"\n"; // Assuming Particle class has toString method
             }
         } else {
             // If not a leaf, recursively display child nodes
             for (const auto& child : children) {
                 if (child != nullptr) {
-                    child->display(depth + 1);
+                    child->printTree(depth + 1);
                 }
             }
         }

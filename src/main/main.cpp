@@ -421,11 +421,15 @@ void main2DSimulation(int forceType, int simType, double delta_t, int dimSimulat
     end = time(NULL);
     std::cout << "Time taken by generateRandomParticles function: " << end - start << " seconds" << std::endl;
 
-    TreeNode<Dimension>* treeRoot = createTree(particles, dimSimulationArea);
+    for(auto p:particles){
+        std::cout<<p.getPos()[0]<< ", "<< p.getPos()[1]<<endl;
+    }
+
+    TreeNode<Dimension>* treeRoot = createTree(particles, 2*dimSimulationArea);
 
      // After building the tree
     if (treeRoot != nullptr) {
-        treeRoot->display(); // Display the tree structure
+        treeRoot->printTree(); // Display the tree structure
     }
 
     delete treeRoot;
