@@ -29,6 +29,47 @@ public:
             delete child;  // Delete each dynamically allocated child
         }
     }
+    
+    // Getters for private attributes
+    double getX() const {
+        return x;
+    }
+
+    double getY() const {
+        return y;
+    }
+
+    double getWidth() const {
+        return w;
+    }
+
+    bool isLeaf() const {
+        return leaf;
+    }
+
+    Particle<Dimension>* getParticle() const {
+        return particle;
+    }
+
+    const std::array<double, Dimension>& getTotalCenter() const {
+        return totalCenter;
+    }
+
+    const std::array<double, Dimension>* getCenter() const {
+        return center;
+    }
+
+    double getTotalMass() const {
+        return totalMass;
+    }
+
+    int getCount() const {
+        return count;
+    }
+
+    const std::array<TreeNode<Dimension>*, 4>& getChildren() const {
+        return children;
+    }
 
     void split() {
         // Calcola la metà della larghezza e un quarto della larghezza per determinare i centri dei nuovi nodi figli
