@@ -542,13 +542,12 @@ void calculateNetForce(TreeNode<Dimension>* node, Particle<Dimension>* b, double
         std::cout << "Node is a leaf and contains a different particle. Applying direct force." << std::endl;
         ApplyDirectForce(b, node->getParticle()); // Apply direct force
     } 
-    else if (!node->isLeaf()) {
+    else if (!node->isLeaf() && node->getParticle() != nullptr) {
         std::cout << "Node is not a leaf. Checking if approximation can be used." << std::endl;
 
         // Compute s/d ratio (size of the region represented by the node divided by distance)
         double s = node->getWidth(); // Assuming getWidth() returns the size of the node region
 
-        // TODO: check memory access here (segmentation fault problem occours here)
         double d = std::sqrt(b->squareDistance(*node->getParticle())); // Using squareDistance from Particle class
 
 
@@ -571,7 +570,6 @@ void calculateNetForce(TreeNode<Dimension>* node, Particle<Dimension>* b, double
             }
         }
     }
-        std::cout << "WTF" << std::endl;
 }
 
 template <size_t Dimension>
