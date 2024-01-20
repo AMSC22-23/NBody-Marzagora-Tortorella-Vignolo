@@ -93,7 +93,7 @@ for i in range (num_files):
             y[int(id)].append(y_val)
             z[int(id)].append(z_val)
 
-print(x)
+#print(x)
 
 # Close all the file objects
 for file_obj in file_objs:
