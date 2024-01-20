@@ -12,29 +12,6 @@
 #include <omp.h>
 #include <cstring>
 
-/**
- * @brief Template function that generates particles in order to perform the simulation. 
- * First it creates randomly (using the random library) the distributions for all the parameters, then it checks if the function struggles to generate non-overlapping particles: 
- * if the function has to regenerate the particle's position more than maxRetry times in a row, then the program ends and print an error message. 
- * Otherwise, it generates randomly the radius and the position of the particles (inside the distributions generated before). After that it checks that the newly generated particle
- * is not overlapping with any existing circle: it calculates the distance between the particle that is being created and the particle p in particles vector. If the particles do not
- * overlap, the remaining properties of the particles are randomly generated and, lastly, the particle is added to the vector of particles; otherwise, variable counter is increased.
- * Finally, this method returns a vector of particles
- * 
- * @tparam Dimension Number of dimensions of the simulation  
- * @param N Number of particles to generate.
- * @param posBoundary Position boundary for particle positions (default: 100).
- * @param minProperty Minimum value of property for generated particles (default: 1).
- * @param maxProperty Maximum value of property for generated particles (default: 99).
- * @param maxVel Maximum velocity for particles (default: 100).
- * @param minRadius Minimum radius for particles (default: 0).
- * @param maxRadius Maximum radius for particles (default: 15).
- * @param type Type flag for particles to identify either they are particles of the gravitational or the Coulomb force (default: false, which refers to gravitational force).
- * @return A vector of particles with randomly generated properties.
- **/
-
-
-
 // Function to create the tree structure from a vector of particles
 template<size_t Dimension>
 TreeNode<Dimension>* createTree(std::vector<Particle<Dimension>>& particles, double dimSimulationArea) {
@@ -61,6 +38,28 @@ TreeNode<Dimension>* createTree(std::vector<Particle<Dimension>>& particles, dou
 
     return root;
 }
+
+
+/**
+ * @brief Template function that generates particles in order to perform the simulation. 
+ * First it creates randomly (using the random library) the distributions for all the parameters, then it checks if the function struggles to generate non-overlapping particles: 
+ * if the function has to regenerate the particle's position more than maxRetry times in a row, then the program ends and print an error message. 
+ * Otherwise, it generates randomly the radius and the position of the particles (inside the distributions generated before). After that it checks that the newly generated particle
+ * is not overlapping with any existing circle: it calculates the distance between the particle that is being created and the particle p in particles vector. If the particles do not
+ * overlap, the remaining properties of the particles are randomly generated and, lastly, the particle is added to the vector of particles; otherwise, variable counter is increased.
+ * Finally, this method returns a vector of particles
+ * 
+ * @tparam Dimension Number of dimensions of the simulation  
+ * @param N Number of particles to generate.
+ * @param posBoundary Position boundary for particle positions (default: 100).
+ * @param minProperty Minimum value of property for generated particles (default: 1).
+ * @param maxProperty Maximum value of property for generated particles (default: 99).
+ * @param maxVel Maximum velocity for particles (default: 100).
+ * @param minRadius Minimum radius for particles (default: 0).
+ * @param maxRadius Maximum radius for particles (default: 15).
+ * @param type Type flag for particles to identify either they are particles of the gravitational or the Coulomb force (default: false, which refers to gravitational force).
+ * @return A vector of particles with randomly generated properties.
+ **/
 
 template<size_t Dimension>
 std::vector<Particle<Dimension>> generateRandomParticles(int N, int posBoundary = 100, int minProperty = 1, int maxProperty = 99, int maxVel = 100, int minRadius = 0, int maxRadius = 15, bool type = false) {
@@ -315,6 +314,34 @@ void printAllParticlesStateAndDistance(const std::vector<Particle<Dimension>>* p
     }
 }
 
+// Funzione per generare un vettore di 7 particelle con posizioni specifiche
+template<size_t Dimension>
+std::vector<Particle<Dimension>> generateTreeTestParticles() {
+    // Creazione di un vettore di 7 particelle con posizioni specifiche
+    std::vector<Particle<Dimension>> particles;
+
+    // Specifica delle posizioni per le 7 particelle
+    std::array<double, Dimension> pos1 = {1.2237, 10.4216};
+    std::array<double, Dimension> pos2 = {4.05444, -69.0231}; 
+    std::array<double, Dimension> pos3 = {-55.1028, 64.0666};
+    std::array<double, Dimension> pos4 = {57.4899, -71.0595}; 
+    std::array<double, Dimension> pos5 = {24.387, 39.731};
+    std::array<double, Dimension> pos6 = {32.3245, -20.8399}; 
+    std::array<double, Dimension> pos7 = {-16.4472, 4.49095};
+
+    // Aggiungi le particelle al vettore
+    particles.push_back(Particle<Dimension>(0, 1.0, pos1, {1.0, 1.0}, 5.0, false));
+    particles.push_back(Particle<Dimension>(1, 1.5, pos2, {2.0, 2.0}, 7.0, false));
+    particles.push_back(Particle<Dimension>(2, 1.0, pos3, {1.0, 1.0}, 5.0, false));
+    particles.push_back(Particle<Dimension>(3, 1.5, pos4, {2.0, 2.0}, 7.0, false));
+    particles.push_back(Particle<Dimension>(4, 1.0, pos5, {1.0, 1.0}, 5.0, false));
+    particles.push_back(Particle<Dimension>(5, 1.5, pos6, {2.0, 2.0}, 7.0, false));
+    particles.push_back(Particle<Dimension>(6, 1.0, pos7, {1.0, 1.0}, 5.0, false));
+
+
+    return particles;
+}
+
 
 /**
  * @brief Template function that generates two particles where one stays still and the other orbits around it.
@@ -353,6 +380,10 @@ std::vector<Particle<Dimension>> generateOrbitTestParticles(double size, double 
 
     return particles;
 }
+
+//create a function that generates 7 particles with specific positions
+
+
 
 /**
  * @brief Template function that writes on file the total number of particles and the size of the area of the simulation and then the initial state of the particles in a file.
@@ -415,10 +446,12 @@ void main2DSimulationBarnesHut(int forceType, int simType, double delta_t, int d
     
     std::ofstream file(fileName);
 
-    start = time(NULL);
-    particles = generateRandomParticles<Dimension>(numParticles, dimSimulationArea, (forceType)? -mass:1, mass, maxVel, 1, maxRadius, forceType);
-    end = time(NULL);
-    std::cout << "Time taken by generateRandomParticles function: " << end - start << " seconds" << std::endl;
+    //start = time(NULL);
+    //particles = generateRandomParticles<Dimension>(numParticles, dimSimulationArea, (forceType)? -mass:1, mass, maxVel, 1, maxRadius, forceType);
+    //end = time(NULL);
+    //std::cout << "Time taken by generateRandomParticles function: " << end - start << " seconds" << std::endl;
+
+    particles = generateTreeTestParticles<Dimension>();
 
     std::cout << "\nPosition of particles generated: "<< std::endl;
     for(auto p:particles){

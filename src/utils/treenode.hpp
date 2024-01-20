@@ -155,9 +155,11 @@ public:
     void printTree(int depth = 0) const {
         // Print the current node's details
         std::cout << std::string(depth * 4, ' ') << "Node at depth " << depth 
-                  << ": [" << x << ", " << y << ", " << w << "], "
-                  << "Mass: " << totalMass << ", Particles: " << count << "\n";
-
+                  << ": [" << x << ", " << y << ", " << w << "], " 
+                  << "Mass: " << totalMass << ", Particles: " << count << ",";
+        // Check if the node is a leaf or an internal node
+        std::cout << (leaf ? " Leaf node\n" : " Internal node\n");
+        
         if (leaf) {
             // If leaf, display the particle if it exists
             if (particle != nullptr) {
