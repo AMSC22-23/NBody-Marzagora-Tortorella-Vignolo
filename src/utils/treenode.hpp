@@ -17,7 +17,7 @@ public:
     // Initializes a TreeNode with specified x, y coordinates and width (w)
     TreeNode(double x, double y, double w) 
         : x(x), y(y), w(w), leaf(true), particle(nullptr), 
-          totalCenter(std::array<double, Dimension>()), center(nullptr), 
+          totalCenter(std::array<double, Dimension>()), center({x,y}), 
           totalMass(0.0), count(0) {
         children.fill(nullptr);  // Initialize all children pointers to nullptr
     }
@@ -55,7 +55,7 @@ public:
         return totalCenter;
     }
 
-    const std::array<double, Dimension>* getCenter() const {
+    const std::array<double, Dimension> getCenter() const {
         return center;
     }
 
@@ -196,7 +196,7 @@ private:
     bool leaf;  // Flag to indicate if the TreeNode is a leaf node
     Particle<Dimension>* particle;  // Pointer to a Particle stored in the TreeNode
     std::array<double, Dimension> totalCenter;  // Total center of mass for the TreeNode
-    std::array<double, Dimension>* center;  // Center of mass for the TreeNode
+    std::array<double, Dimension> center;  // Center of mass for the TreeNode
     Particle<Dimension>* approximatedParticle;  // Approximated Particle for the TreeNode
     double totalMass;  // Total mass of all particles in the TreeNode
     int count;  // Count of particles in the TreeNode

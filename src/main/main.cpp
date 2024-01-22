@@ -321,22 +321,22 @@ std::vector<Particle<Dimension>> generateTreeTestParticles() {
     std::vector<Particle<Dimension>> particles;
 
     // Specifica delle posizioni per le 7 particelle
-    std::array<double, Dimension> pos1 = {1.2237, 10.4216};
-    std::array<double, Dimension> pos2 = {4.05444, -69.0231}; 
-    std::array<double, Dimension> pos3 = {-55.1028, 64.0666};
-    std::array<double, Dimension> pos4 = {57.4899, -71.0595}; 
-    std::array<double, Dimension> pos5 = {24.387, 39.731};
-    std::array<double, Dimension> pos6 = {32.3245, -20.8399}; 
-    std::array<double, Dimension> pos7 = {-16.4472, 4.49095};
+    std::array<double, Dimension> pos1 = {2.0, 10.0};
+    std::array<double, Dimension> pos2 = {4.0, -70.0}; 
+    std::array<double, Dimension> pos3 = {-55.0, 65.0};
+    std::array<double, Dimension> pos4 = {55.0, -70.0}; 
+    std::array<double, Dimension> pos5 = {25.0, 40.0};
+    std::array<double, Dimension> pos6 = {30.0, -20.0}; 
+    std::array<double, Dimension> pos7 = {-15.0, 5.0};
 
     // Aggiungi le particelle al vettore
-    particles.push_back(Particle<Dimension>(0, 1.0, pos1, {1.0, 1.0}, 5.0, false));
-    particles.push_back(Particle<Dimension>(1, 1.5, pos2, {2.0, 2.0}, 7.0, false));
-    particles.push_back(Particle<Dimension>(2, 1.0, pos3, {1.0, 1.0}, 5.0, false));
-    particles.push_back(Particle<Dimension>(3, 1.5, pos4, {2.0, 2.0}, 7.0, false));
-    particles.push_back(Particle<Dimension>(4, 1.0, pos5, {1.0, 1.0}, 5.0, false));
-    particles.push_back(Particle<Dimension>(5, 1.5, pos6, {2.0, 2.0}, 7.0, false));
-    particles.push_back(Particle<Dimension>(6, 1.0, pos7, {1.0, 1.0}, 5.0, false));
+    particles.push_back(Particle<Dimension>(0, 10.0, pos1, {10.0, 10.0}, 5.0, false));
+    particles.push_back(Particle<Dimension>(1, 10.5, pos2, {20.0, 20.0}, 7.0, false));
+    particles.push_back(Particle<Dimension>(2, 10.0, pos3, {10.0, 10.0}, 5.0, false));
+    particles.push_back(Particle<Dimension>(3, 10.5, pos4, {20.0, 20.0}, 7.0, false));
+    particles.push_back(Particle<Dimension>(4, 10.0, pos5, {10.0, 10.0}, 5.0, false));
+    particles.push_back(Particle<Dimension>(5, 10.5, pos6, {20.0, 20.0}, 7.0, false));
+    particles.push_back(Particle<Dimension>(6, 10.0, pos7, {10.0, 10.0}, 5.0, false));
 
 
     return particles;
@@ -437,8 +437,8 @@ void main2DSimulationBarnesHut(int forceType, int simType, double delta_t, int d
     
     time_t start, end;
     std::vector<Particle<Dimension>> particles; 
-    numParticles = 7;
-    dimSimulationArea = 80;
+    numParticles = 10;
+    dimSimulationArea = 1000;
     
     Force<Dimension>* f;
     if(forceType == 1 ) f = new CoulombForce<Dimension>();
@@ -446,49 +446,73 @@ void main2DSimulationBarnesHut(int forceType, int simType, double delta_t, int d
     
     std::ofstream file(fileName);
 
-    //start = time(NULL);
-    //particles = generateRandomParticles<Dimension>(numParticles, dimSimulationArea, (forceType)? -mass:1, mass, maxVel, 1, maxRadius, forceType);
-    //end = time(NULL);
-    //std::cout << "Time taken by generateRandomParticles function: " << end - start << " seconds" << std::endl;
+    start = time(NULL);
+    particles = generateRandomParticles<Dimension>(numParticles, dimSimulationArea, (forceType)? -mass:1, mass, maxVel, 1, maxRadius, forceType);
+    end = time(NULL);
+    std::cout << "Time taken by generateRandomParticles function: " << end - start << " seconds" << std::endl;
 
-    particles = generateTreeTestParticles<Dimension>();
+    printInitialStateOnFile(&particles, dimSimulationArea, fileName, file, iterationNumber, speedUp);
 
-    std::cout << "\nPosition of particles generated: "<< std::endl;
-    for(auto p:particles){
-        std::cout<< p.getPos()[0]<< ", "<< p.getPos()[1]<<endl;
-    }
+    //particles = generateTreeTestParticles<Dimension>();
+
+    //std::cout << "\nPosition of particles generated: "<< std::endl;
+    //for(auto p:particles){
+    //    std::cout<< p.getPos()[0]<< ", "<< p.getPos()[1]<<endl;
+    //}
 
     double deltaTime = 0.01; // Δt
-    double totalTime = 0.1;  // Durata totale della simulazione
+    double totalTime = 10000;  // Durata totale della simulazione
     double theta = 0.5;
 
     TreeNode<Dimension>* treeRoot = createTree(particles, 2*dimSimulationArea);
     
-    std::cout << "\n\nTree structure: "<< std::endl;
-    //After building the tree
-    if (treeRoot != nullptr) {
-        treeRoot->printTree(); // Display the tree structure
-    }
+    //std::cout << "\n\nTree structure: "<< std::endl;
+    ////After building the tree
+    //if (treeRoot != nullptr) {
+    //    treeRoot->printTree(); // Display the tree structure
+    //}
 
     // TEST calculateNetForce on a particle: 
 
     // Choose a particle for which you want to calculate the net force
-    Particle<Dimension>* targetParticle = &particles[0]; // example: first particle in the list
+    Particle<Dimension>* targetParticle = &particles[2]; // example: first particle in the list
 
-    // Reset force on the target particle before calculation
-    targetParticle->resetForce();
+    //calcola le forze su ogni particella
+    for(size_t i = 0; i<totalTime; i++){
 
-    // Optionally, you can print the state of the particle to see the net force
-    std::cout << "\n\nInitial state of targetParticle: "<< std::endl;
-    targetParticle->printStates();
+        for (auto& particle : particles) {
+            particle.resetForce();
+            calculateNetForce(treeRoot, &particle, theta, *f);
+        }
+        
+        // Aggiorna la posizione e la velocità di ogni particella
+        //std::cout << "\n\nFinal state of targetParticle after calculateNetForce: "<< std::endl;
+        for (auto& particle : particles) {
+            particle.update(deltaTime);
+            //particle.printStates();
+        }
 
-    // Calculate the net force on the target particle
-    std::cout << "\n\nStart of calculateNetForce: "<< std::endl;
-    calculateNetForce(treeRoot, targetParticle, theta);
+        for (int i = 0; i < numParticles; i++) {
+                Particle<Dimension> &q = (particles)[i];
+                if (file.is_open()) {
+                    file << q.getId() << ",";
+                    const auto& pos = q.getPos();
+                    for (size_t i = 0; i < Dimension; ++i) {
+                        file << pos[i];
+                        if (i < Dimension - 1) {
+                            file << ",";
+                        }
+                    }
+                    file << std::endl;
+                } else {
+                    std::cout << "Unable to open file";
+                }
+            }
+    }
 
-    // Optionally, you can print the state of the particle to see the net force
-    std::cout << "\n\nFinal state of targetParticle after calculateNetForce: "<< std::endl;
-    targetParticle->printStates();
+    
+
+    file.close();
     
     // Clean up the tree
     delete treeRoot;
@@ -527,26 +551,34 @@ To calculate the net force acting on body b, use the following recursive procedu
 
 //TODO: controllare correttezza dei calcoli
 template <size_t Dimension>
-void calculateNetForce(TreeNode<Dimension>* node, Particle<Dimension>* b, double theta) {
-    std::cout << "Calculating net force for particle " << b->getId() << std::endl;
+void calculateNetForce(TreeNode<Dimension>* node, Particle<Dimension>* b, double theta, Force<Dimension>& f) {
+    //b->printStates();
+
+
+    //std::cout << "\n\nCalculating net force for particle " << b->getId() << std::endl;
+    //std::cout << "\tCurrent tree node center: " << node->getCenter()[0] <<" : "<< node->getCenter()[1] << std::endl;
+
+    std::array<double,Dimension> force_qk;
 
     if (node == nullptr) {
-        std::cout << "Node is null. Exiting function." << std::endl;
+        //std::cout << "\tNode is null. Exiting function." << std::endl; 
         return;
     }else{
-        if(node->getParticle() != nullptr)
-            std::cout << "node:  " << node->getParticle()->getId() << std::endl;
+        //if(node->getParticle() != nullptr)
+            //std::cout << "\tnode:  " << node->getParticle()->getId() << std::endl;
 
     }
 
     // Check if the node is a leaf and not the same as the particle we're calculating the force on
     if (node->isLeaf() && node->getParticle() != nullptr && node->getParticle() != b) {
-        std::cout << "Node is a leaf and contains a different particle. Applying direct force." << std::endl;
-        ApplyDirectForce(b, node->getParticle()); // Apply direct force
-        //calculateForce(*b, *node->getParticle());
+        //std::cout << "\tNode is a leaf and contains a different particle. Applying direct force." << std::endl;
+        
+        force_qk = f.calculateForce(*b, *node->getParticle());
+        b->addForce(force_qk);
+
     } 
     else if (!node->isLeaf()) {
-        std::cout << "Node is not a leaf. Checking if approximation can be used." << std::endl;
+        //std::cout << "\tNode is not a leaf. Checking if approximation can be used." << std::endl;
 
         // Compute s/d ratio (size of the region represented by the node divided by distance)
         double s = node->getWidth(); // Assuming getWidth() returns the size of the node region
@@ -556,22 +588,29 @@ void calculateNetForce(TreeNode<Dimension>* node, Particle<Dimension>* b, double
 
         // Check for division by zero or very small d
         if (d == 0) {
-            std::cout << "Distance is zero, avoiding division by zero." << std::endl;
+            //std::cout << "\tDistance is zero, avoiding division by zero." << std::endl;
             return;
         }
         
-        std::cout << "s/d ratio: " << s/d << " (Threshold: " << theta << ")" << std::endl;
+        //std::cout << "\ts/d ratio: " << s/d << " (Threshold: " << theta << ")" << std::endl;
+
         if (s / d < theta) {
-            std::cout << "Using approximation to apply force." << std::endl;
-            ApplyApproximateForce(b, node); // Apply approximate force
+            //std::cout << "\tUsing approximation to apply force." << std::endl;
+
+            force_qk = f.calculateForce(*b, *node->getApproximatedParticle());
+            b->addForce(force_qk);
+            //applyApproximateForce(b, node); // Apply approximate force
         } 
         else {
-            std::cout << "s/d ratio too high. Recursing into children nodes." << std::endl;
+            //std::cout << "\ts/d ratio too high. Recursing into children nodes." << std::endl;
             // Recursively calculate force on children
             for (auto& child : node->getChildren()) {
-                calculateNetForce(child, b, theta);
+                calculateNetForce(child, b, theta, f);
             }
         }
+    }else{
+        //std::cout << "\tNode is a leaf." << std::endl;
+
     }
 }
 
@@ -618,7 +657,7 @@ void ApplyApproximateForce(Particle<Dimension>* particle, TreeNode<Dimension>* n
 
 template <size_t Dimension>
 void ApplyDirectForce(Particle<Dimension>* particle1, Particle<Dimension>* particle2) {
-    std::cout<<"ApplyDirectForce"<<endl;
+    std::cout<<"\tApplyDirectForce"<<endl;
     double G = 6.67430e-11; // Gravitational constant
 
     double distSquared = particle1->squareDistance(*particle2);
@@ -971,7 +1010,7 @@ int main(int argc, char** argv) {
     
 
     if(dim == 2) {
-        main2DSimulationBarnesHut<2>(forceType, simType, delta_t, dimSimulationArea, iterationNumber, numParticles, mass, maxVel, maxRadius, softening, fileName, speedUp); 
+        main2DSimulationBarnesHut<2>(forceType, simType, delta_t, dimSimulationArea, iterationNumber, numParticles, mass, 0, 100, softening, fileName, speedUp); 
         //main2DSimulation<2>(forceType, simType, delta_t, dimSimulationArea, iterationNumber, numParticles, mass, maxVel, maxRadius, softening, fileName, speedUp);
     } else if (dim == 3) {
         main3DSimulation<3>(forceType, simType, delta_t, dimSimulationArea, iterationNumber, numParticles, mass, maxVel, maxRadius, softening, fileName, speedUp);    
