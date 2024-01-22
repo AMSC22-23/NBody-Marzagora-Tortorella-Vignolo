@@ -113,6 +113,7 @@ public:
         // Se il nodo è una foglia, ma non contiene ancora una particella
         if (leaf && particle == nullptr) {
             particle = newParticle; // Inserisci la particella qui
+            approximatedParticle = createApproximatedParticle();
             return;
         }
 
@@ -124,6 +125,7 @@ public:
             int existingParticleIndex = getQuadrantIndex(particle->getPos()[0], particle->getPos()[1], x, y);
             if (existingParticleIndex != -1) {
                 children[existingParticleIndex]->insert(particle);
+                approximatedParticle = createApproximatedParticle();
             } else {
                 cerr << "Errore: indice del quadrante non valido durante il reinserimento." << endl;
             }
@@ -176,6 +178,18 @@ public:
         }
     }
 
+    // Particle(int id, double p, std::array<double, Dimension> pos, std::array<double, Dimension> v, double radius, bool type
+    Particle<Dimension>* createApproximatedParticle() {
+        // Create a particle with the center of mass and total mass of the node
+        // Return the particle
+        return new Particle<Dimension>(count,  totalMass, totalCenter, {0.0, 0.0}, 1.0, false);
+    }
+
+    // Method that returns the approximated particle for the node
+    Particle<Dimension>* getApproximatedParticle() const {
+        return approximatedParticle;
+    }
+
 private:
     double x, y, w;  // x, y coordinates and width of the TreeNode region
     std::array<TreeNode<Dimension>*, 4> children;  // Array of pointers to child TreeNodes
@@ -183,6 +197,7 @@ private:
     Particle<Dimension>* particle;  // Pointer to a Particle stored in the TreeNode
     std::array<double, Dimension> totalCenter;  // Total center of mass for the TreeNode
     std::array<double, Dimension>* center;  // Center of mass for the TreeNode
+    Particle<Dimension>* approximatedParticle;  // Approximated Particle for the TreeNode
     double totalMass;  // Total mass of all particles in the TreeNode
     int count;  // Count of particles in the TreeNode
 };

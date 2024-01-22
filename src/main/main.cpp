@@ -524,6 +524,8 @@ To calculate the net force acting on body b, use the following recursive procedu
 3)Otherwise, run the procedure recursively on each of the current node’s children.
 
 */
+
+//TODO: controllare correttezza dei calcoli
 template <size_t Dimension>
 void calculateNetForce(TreeNode<Dimension>* node, Particle<Dimension>* b, double theta) {
     std::cout << "Calculating net force for particle " << b->getId() << std::endl;
@@ -541,15 +543,16 @@ void calculateNetForce(TreeNode<Dimension>* node, Particle<Dimension>* b, double
     if (node->isLeaf() && node->getParticle() != nullptr && node->getParticle() != b) {
         std::cout << "Node is a leaf and contains a different particle. Applying direct force." << std::endl;
         ApplyDirectForce(b, node->getParticle()); // Apply direct force
+        //calculateForce(*b, *node->getParticle());
     } 
-    else if (!node->isLeaf() && node->getParticle() != nullptr) {
+    else if (!node->isLeaf()) {
         std::cout << "Node is not a leaf. Checking if approximation can be used." << std::endl;
 
         // Compute s/d ratio (size of the region represented by the node divided by distance)
         double s = node->getWidth(); // Assuming getWidth() returns the size of the node region
 
-        double d = std::sqrt(b->squareDistance(*node->getParticle())); // Using squareDistance from Particle class
-
+        //double d = std::sqrt(b->squareDistance(node->getTotalCenter())); // Using squareDistance from Particle class
+        double d = std::sqrt(b->squareDistance(*node->getApproximatedParticle())); // Using squareDistance from Particle class
 
         // Check for division by zero or very small d
         if (d == 0) {
