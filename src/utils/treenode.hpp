@@ -25,11 +25,12 @@ public:
     // Destructor for the TreeNode class
     // Responsible for cleaning up dynamically allocated child TreeNodes
     ~TreeNode() {
+        delete approximatedParticle;  // Free memory for approximatedParticl
         for (auto& child : children) {
             delete child;  // Delete each dynamically allocated child
         }
     }
-    
+
     // Getters for private attributes
     double getX() const {
         return x;
@@ -108,10 +109,10 @@ public:
     }
 
     void insert(Particle<Dimension>* newParticle) {
-        updateAttributes(newParticle);
 
         // Se il nodo è una foglia, ma non contiene ancora una particella
         if (leaf && particle == nullptr) {
+            updateAttributes(newParticle);
             particle = newParticle; // Inserisci la particella qui
             approximatedParticle = createApproximatedParticle();
             return;
@@ -119,6 +120,7 @@ public:
 
         // Se il nodo è una foglia e contiene già una particella, bisogna dividerlo
         if (leaf && particle != nullptr) {
+            updateAttributes(newParticle);
             split(); // Divide il nodo in 4 nodi figli
 
             // Reinserisci la particella esistente nei nuovi nodi figli
@@ -139,6 +141,7 @@ public:
                 cerr << "Errore: nodo figlio non inizializzato." << endl;
                 return;
             }
+            updateAttributes(newParticle);
             children[newParticleIndex]->insert(newParticle);
         } else {
             cerr << "Errore: indice del quadrante non valido per la nuova particella." << endl;
@@ -147,9 +150,14 @@ public:
 
     // Method to update the node's mass and count attributes
     void updateAttributes(Particle<Dimension>* newParticle) {
+        double oldTotalMass = totalMass;
         totalMass += newParticle->getProperty(); // Property of particle: mass for gravitational force, charge for Coulomb force.
         count++;
-        // update: totalCenter & center
+        for(size_t i = 0; i < Dimension; ++i) {
+            double sumWeights = totalCenter[i] * oldTotalMass;
+            sumWeights += newParticle->getPos()[i] * newParticle->getProperty();
+            totalCenter[i] = sumWeights / totalMass;
+        }
     }
 
     

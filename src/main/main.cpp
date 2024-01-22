@@ -25,7 +25,7 @@ TreeNode<Dimension>* createTree(std::vector<Particle<Dimension>>& particles, dou
     double minY = minX;
     double maxY = maxX;
 
-    std::cout<< dimSimulationArea<<"->"<< minX << ", " << maxX <<endl;
+    //std::cout<< dimSimulationArea<<"->"<< minX << ", " << maxX <<endl;
 
     // Create the root of the tree
     double width = std::max(maxX - minX, maxY - minY);
@@ -437,7 +437,7 @@ void main2DSimulationBarnesHut(int forceType, int simType, double delta_t, int d
     
     time_t start, end;
     std::vector<Particle<Dimension>> particles; 
-    numParticles = 10;
+    numParticles = 2000;
     dimSimulationArea = 1000;
     
     Force<Dimension>* f;
@@ -446,14 +446,20 @@ void main2DSimulationBarnesHut(int forceType, int simType, double delta_t, int d
     
     std::ofstream file(fileName);
 
-    start = time(NULL);
+    //particles = generateOrbitTestParticles<Dimension>(dimSimulationArea, 10000);
+
+    //start = time(NULL);
     particles = generateRandomParticles<Dimension>(numParticles, dimSimulationArea, (forceType)? -mass:1, mass, maxVel, 1, maxRadius, forceType);
-    end = time(NULL);
-    std::cout << "Time taken by generateRandomParticles function: " << end - start << " seconds" << std::endl;
+    //end = time(NULL);
+    //std::cout << "Time taken by generateRandomParticles function: " << end - start << " seconds" << std::endl;
 
     printInitialStateOnFile(&particles, dimSimulationArea, fileName, file, iterationNumber, speedUp);
 
-    //particles = generateTreeTestParticles<Dimension>();
+    for (auto& particle : particles) {
+            particle.printStates();
+    }
+
+    
 
     //std::cout << "\nPosition of particles generated: "<< std::endl;
     //for(auto p:particles){
@@ -464,8 +470,8 @@ void main2DSimulationBarnesHut(int forceType, int simType, double delta_t, int d
     double totalTime = 10000;  // Durata totale della simulazione
     double theta = 0.5;
 
-    TreeNode<Dimension>* treeRoot = createTree(particles, 2*dimSimulationArea);
-    
+    TreeNode<Dimension>* treeRoot ; //= createTree(particles, 2*dimSimulationArea);
+    int count = 0;
     //std::cout << "\n\nTree structure: "<< std::endl;
     ////After building the tree
     //if (treeRoot != nullptr) {
@@ -475,16 +481,22 @@ void main2DSimulationBarnesHut(int forceType, int simType, double delta_t, int d
     // TEST calculateNetForce on a particle: 
 
     // Choose a particle for which you want to calculate the net force
-    Particle<Dimension>* targetParticle = &particles[2]; // example: first particle in the list
+    //Particle<Dimension>* targetParticle = &particles[2]; // example: first particle in the list
 
     //calcola le forze su ogni particella
-    for(size_t i = 0; i<totalTime; i++){
+    for(size_t i = 0; i<totalTime; ++i){
+        
+        treeRoot = createTree(particles, 2*dimSimulationArea);
+        
+        ++count;
+        std::cout << count << std::endl;
+
 
         for (auto& particle : particles) {
             particle.resetForce();
             calculateNetForce(treeRoot, &particle, theta, *f);
         }
-        
+
         // Aggiorna la posizione e la velocità di ogni particella
         //std::cout << "\n\nFinal state of targetParticle after calculateNetForce: "<< std::endl;
         for (auto& particle : particles) {
@@ -492,30 +504,42 @@ void main2DSimulationBarnesHut(int forceType, int simType, double delta_t, int d
             //particle.printStates();
         }
 
+        std::cout << "After updating particles" << std::endl;
+
         for (int i = 0; i < numParticles; i++) {
-                Particle<Dimension> &q = (particles)[i];
-                if (file.is_open()) {
-                    file << q.getId() << ",";
-                    const auto& pos = q.getPos();
-                    for (size_t i = 0; i < Dimension; ++i) {
-                        file << pos[i];
-                        if (i < Dimension - 1) {
-                            file << ",";
-                        }
+            Particle<Dimension> q = particles[i];
+            if (file.is_open()) {
+                file << q.getId() << ",";
+                const auto& pos = q.getPos();
+                for (size_t i = 0; i < Dimension; ++i) {
+                    file << pos[i];
+                    if (i < Dimension - 1) {
+                        file << ",";
                     }
-                    file << std::endl;
-                } else {
-                    std::cout << "Unable to open file";
                 }
+                file << std::endl;
+            } else {
+                std::cout << "Unable to open file";
             }
+        }
+
+        std::cout << "After writing on file" << std::endl;
+
+        delete treeRoot;
+        
+        std::cout << "After deleting tree" << std::endl;
+
     }
 
-    
+    for (auto& particle : particles) {
+            particle.printStates();
+    }
+
 
     file.close();
     
     // Clean up the tree
-    delete treeRoot;
+    //delete treeRoot;
 
     //for (double currentTime = 0; currentTime < totalTime; currentTime += deltaTime) {
     //    // Costruisci l'albero di Barnes-Hut con le particelle attuali
