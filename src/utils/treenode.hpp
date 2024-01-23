@@ -25,8 +25,8 @@ public:
     // Destructor for the TreeNode class
     // Responsible for cleaning up dynamically allocated child TreeNodes
     ~TreeNode() {
-        delete approximatedParticle;  // Free memory for approximatedParticl
         for (auto& child : children) {
+            delete child->approximatedParticle;
             delete child;  // Delete each dynamically allocated child
         }
     }

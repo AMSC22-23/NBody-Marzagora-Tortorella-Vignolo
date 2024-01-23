@@ -470,8 +470,9 @@ void main2DSimulationBarnesHut(int forceType, int simType, double delta_t, int d
     double totalTime = 10000;  // Durata totale della simulazione
     double theta = 0.5;
 
-    TreeNode<Dimension>* treeRoot ; //= createTree(particles, 2*dimSimulationArea);
+    TreeNode<Dimension>* treeRoot = createTree(particles, 2*dimSimulationArea);
     int count = 0;
+
     //std::cout << "\n\nTree structure: "<< std::endl;
     ////After building the tree
     //if (treeRoot != nullptr) {
@@ -485,8 +486,10 @@ void main2DSimulationBarnesHut(int forceType, int simType, double delta_t, int d
 
     //calcola le forze su ogni particella
     for(size_t i = 0; i<totalTime; ++i){
-        
-        treeRoot = createTree(particles, 2*dimSimulationArea);
+
+        treeRoot = new TreeNode<Dimension>(-dimSimulationArea, -dimSimulationArea, 2*dimSimulationArea);
+
+        //treeRoot = createTree(particles, 2*dimSimulationArea);
         
         ++count;
         std::cout << count << std::endl;
@@ -525,7 +528,7 @@ void main2DSimulationBarnesHut(int forceType, int simType, double delta_t, int d
 
         std::cout << "After writing on file" << std::endl;
 
-        delete treeRoot;
+        //delete treeRoot;
         
         std::cout << "After deleting tree" << std::endl;
 
