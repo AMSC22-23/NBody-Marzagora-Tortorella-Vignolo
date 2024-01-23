@@ -26,7 +26,7 @@ public:
     // Responsible for cleaning up dynamically allocated child TreeNodes
     ~TreeNode() {
         for (auto& child : children) {
-            delete child->approximatedParticle;
+            if(child->approximatedParticle != nullptr) delete child->approximatedParticle;
             delete child;  // Delete each dynamically allocated child
         }
     }

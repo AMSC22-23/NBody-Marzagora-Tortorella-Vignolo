@@ -437,8 +437,9 @@ void main2DSimulationBarnesHut(int forceType, int simType, double delta_t, int d
     
     time_t start, end;
     std::vector<Particle<Dimension>> particles; 
-    numParticles = 2000;
-    dimSimulationArea = 1000;
+    numParticles = 2;
+    dimSimulationArea = 20;
+    delta_t = 0.1;
     
     Force<Dimension>* f;
     if(forceType == 1 ) f = new CoulombForce<Dimension>();
@@ -446,10 +447,10 @@ void main2DSimulationBarnesHut(int forceType, int simType, double delta_t, int d
     
     std::ofstream file(fileName);
 
-    //particles = generateOrbitTestParticles<Dimension>(dimSimulationArea, 10000);
+    particles = generateOrbitTestParticles<Dimension>(dimSimulationArea, 10000);
 
     //start = time(NULL);
-    particles = generateRandomParticles<Dimension>(numParticles, dimSimulationArea, (forceType)? -mass:1, mass, maxVel, 1, maxRadius, forceType);
+    //particles = generateRandomParticles<Dimension>(numParticles, dimSimulationArea, (forceType)? -mass:1, mass, maxVel, 1, maxRadius, forceType);
     //end = time(NULL);
     //std::cout << "Time taken by generateRandomParticles function: " << end - start << " seconds" << std::endl;
 
@@ -466,8 +467,6 @@ void main2DSimulationBarnesHut(int forceType, int simType, double delta_t, int d
     //    std::cout<< p.getPos()[0]<< ", "<< p.getPos()[1]<<endl;
     //}
 
-    double deltaTime = 0.01; // Δt
-    double totalTime = 10000;  // Durata totale della simulazione
     double theta = 0.5;
 
     TreeNode<Dimension>* treeRoot = createTree(particles, 2*dimSimulationArea);
@@ -485,7 +484,7 @@ void main2DSimulationBarnesHut(int forceType, int simType, double delta_t, int d
     //Particle<Dimension>* targetParticle = &particles[2]; // example: first particle in the list
 
     //calcola le forze su ogni particella
-    for(size_t i = 0; i<totalTime; ++i){
+    for(size_t i = 0; i<iterationNumber; ++i){
 
         treeRoot = new TreeNode<Dimension>(-dimSimulationArea, -dimSimulationArea, 2*dimSimulationArea);
 
@@ -503,15 +502,16 @@ void main2DSimulationBarnesHut(int forceType, int simType, double delta_t, int d
         // Aggiorna la posizione e la velocità di ogni particella
         //std::cout << "\n\nFinal state of targetParticle after calculateNetForce: "<< std::endl;
         for (auto& particle : particles) {
-            particle.update(deltaTime);
+            particle.update(delta_t);
             //particle.printStates();
         }
 
         std::cout << "After updating particles" << std::endl;
 
-        for (int i = 0; i < numParticles; i++) {
+        for (size_t i = 0; i < numParticles; ++i) {
             Particle<Dimension> q = particles[i];
             if (file.is_open()) {
+                std::cout << "Writing on file" << std::endl;
                 file << q.getId() << ",";
                 const auto& pos = q.getPos();
                 for (size_t i = 0; i < Dimension; ++i) {
@@ -738,7 +738,8 @@ void main2DSimulation(int forceType, int simType, double delta_t, int dimSimulat
     std::ofstream file(fileName);
 
     start = time(NULL);
-    particles = generateRandomParticles<Dimension>(numParticles, dimSimulationArea, (forceType)? -mass:1, mass, maxVel, 1, maxRadius, forceType);
+    //particles = generateRandomParticles<Dimension>(numParticles, dimSimulationArea, (forceType)? -mass:1, mass, maxVel, 1, maxRadius, forceType);
+    particles = generateOrbitTestParticles<Dimension>(dimSimulationArea, 1000);
     end = time(NULL);
     std::cout << "Time taken by generateRandomParticles function: " << end - start << " seconds" << std::endl;
 
@@ -830,7 +831,7 @@ int main(int argc, char** argv) {
     int dim = 2; 
     int simType = 0;
     int forceType = 0;
-    double delta_t = 0.01;
+    double delta_t = 0.1;
     int dimSimulationArea = 500; 
     int iterationNumber = 1000; 
     int numParticles = 50;
