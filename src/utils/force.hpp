@@ -49,16 +49,26 @@ class GravitationalForce : public Force<Dimension>{
         std::array<double,Dimension> calculateForce(const Particle<Dimension> &k, const Particle<Dimension> &q) const override{
             const auto& k_pos = k.getPos();
             const auto& q_pos = q.getPos();
+            
+            std::cout<< "\t pos: " << k.getPos()[0]<< " : " << k.getPos()[1] <<std::endl;
+            std::cout<< "\t pos: " << q.getPos()[0]<< " : " << q.getPos()[1] <<std::endl;
 
             std::array<double, Dimension> pos_diff;
             for(size_t i = 0; i < Dimension; ++i) pos_diff[i] = q_pos[i] - k_pos[i];
+            
+            std::cout<< "\t pos_diff: " << pos_diff[0]<<" : " <<pos_diff[1]<<std::endl;
 
             double dist_squared = 0.0;
             for(size_t i = 0; i < Dimension; ++i) dist_squared = pos_diff[i] * pos_diff[i] + dist_squared;
             double dist = std::sqrt(dist_squared);
             double dist_cubed = dist * dist * dist;
 
+            
+            std::cout<< "\t dist: " << dist<<std::endl;
+
             double gravF = G * q.getProperty() * k.getProperty() / dist_cubed;
+
+            std::cout<< "\t gravF: " << gravF<<std::endl;
 
             std::array<double, Dimension> force_qk;
             for(size_t i = 0; i < Dimension; ++i) force_qk[i] = gravF * pos_diff[i];
@@ -66,7 +76,7 @@ class GravitationalForce : public Force<Dimension>{
             return force_qk; 
         }
     private:
-        double const G = 1000;
+        double const G = 10000;
 };
 
 /**

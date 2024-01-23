@@ -105,14 +105,15 @@ public:
         if (isLeft && !isTop) return 2; // Bottom-left
         if (!isLeft && !isTop) return 3; // Bottom-right
 
+        std::cout<<"NON VA BENE";
         return -1; // Should not happen :D
     }
 
     void insert(Particle<Dimension>* newParticle) {
+        updateAttributes(newParticle);
 
         // Se il nodo è una foglia, ma non contiene ancora una particella
         if (leaf && particle == nullptr) {
-            updateAttributes(newParticle);
             particle = newParticle; // Inserisci la particella qui
             approximatedParticle = createApproximatedParticle();
             return;
@@ -120,7 +121,6 @@ public:
 
         // Se il nodo è una foglia e contiene già una particella, bisogna dividerlo
         if (leaf && particle != nullptr) {
-            updateAttributes(newParticle);
             split(); // Divide il nodo in 4 nodi figli
 
             // Reinserisci la particella esistente nei nuovi nodi figli
@@ -141,7 +141,6 @@ public:
                 cerr << "Errore: nodo figlio non inizializzato." << endl;
                 return;
             }
-            updateAttributes(newParticle);
             children[newParticleIndex]->insert(newParticle);
         } else {
             cerr << "Errore: indice del quadrante non valido per la nuova particella." << endl;
