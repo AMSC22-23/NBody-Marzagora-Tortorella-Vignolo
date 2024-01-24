@@ -43,6 +43,152 @@ std::unique_ptr<QuadtreeNode<Dimension>> createQuadTree(std::vector<Particle<Dim
 }
 
 
+template<size_t Dimension>
+std::vector<std::array<double, Dimension>> getSubRegionsCoordinates(int num_threads, double dim) {
+    std::vector<std::array<double, Dimension>> regions;
+    
+    int rows = std::sqrt(num_threads);
+    while (num_threads % rows != 0) {
+        rows--;
+    }
+    int cols = num_threads / rows;
+
+    double regionWidth = dim / cols;
+    double regionHeight = dim / rows;
+
+    for (int i = 0; i < rows; i++) {
+        for (int j = 0; j < cols; j++) {
+            double centerX = (j + 0.5) * regionWidth - dim / 2;
+            double centerY = (i + 0.5) * regionHeight - dim / 2;
+            regions.push_back({centerX, centerY});
+        }
+    }
+
+    return regions;
+}
+
+
+template<size_t Dimension>
+std::array<double, Dimension> getSubRegionsDimension(int num_threads, double dim) {
+    std::array<double, Dimension> regionsDim;
+    
+    int rows = std::sqrt(num_threads);
+    while (num_threads % rows != 0) {
+        rows--;
+    }
+    int cols = num_threads / rows;
+
+    double regionWidth = dim / cols;
+    double regionHeight = dim / rows;
+    regionsDim[0] = regionWidth;
+    regionsDim[1] = regionHeight;
+
+    return regionsDim;
+}
+
+
+template<size_t Dimension>
+int generateTreeParallel(std::vector<Particle<Dimension>>* particles, double dimSimulationArea){
+    std::cout<<"start generateTreeParallel"<<std::endl;
+
+    int num_threads = 4; // Example value
+
+    int num_quad = pow(4, ceil(log(num_threads)/log(4)));
+
+    std::vector<std::array<double, 2>> regions = getSubRegionsCoordinates<Dimension>(num_quad, dimSimulationArea);
+    std::array<double, 2> subRegionsDimension = getSubRegionsDimension<Dimension>(num_quad, dimSimulationArea);
+
+    for (const auto& region : regions) {
+        std::cout << "Center: (" << region[0] << ", " << region[1] 
+                << "); " << std::endl;
+    }
+    std::cout<<subRegionsDimension[0]<<" : "<<subRegionsDimension[1]<<std::endl;
+    std::cout<<num_quad<<std::endl;
+
+    std::vector<std::unique_ptr<QuadtreeNode<Dimension>>> roots;
+    std::unique_ptr<QuadtreeNode<Dimension>> roots_;
+    //roots.reserve(num_quad);
+
+    //#pragma omp parallel for shared(particles, regions)
+    for(int i = 0; i<num_quad; i++){
+        std::cout<<i<<std::endl;
+        roots.push_back(createQuadTreeParallel(*particles, regions[i], subRegionsDimension[0], dimSimulationArea));
+        std::cout<<"end"<<std::endl;
+    }
+    
+    for(int i = 0; i<num_quad; i++){
+        roots[i]->printTree();
+    }
+
+    // merge
+    std::cout<<"end generateTreeParallel"<<std::endl;
+    return 1;
+}
+
+template<size_t Dimension>
+std::unique_ptr<QuadtreeNode<Dimension>> createQuadTreeParallel(std::vector<Particle<Dimension>>& particles, std::array<double, Dimension> center, double width, double dimSimulationArea) {
+    
+    std::cout<<"start createQuadTreeParallel"<<std::endl;
+
+    if (particles.empty()) {
+        std::cout<<"empty"<<std::endl;
+        return nullptr;
+    }
+
+    // Determine the simulation boundaries (this might need to be adjusted)
+    double minX = center[0] - width * 0.5;
+    double maxX = center[0] + width * 0.5;
+    double minY = center[1] - width * 0.5;
+    double maxY = center[1] + width * 0.5;
+
+    std::cout<< width <<" -> "<< minX << ", " << maxX <<endl;
+    //std::cout<<"num particles"<< particles.size() <<endl;
+
+    // Create the root of the tree
+    std::unique_ptr<QuadtreeNode<Dimension>> root = std::make_unique<QuadtreeNode<Dimension>>(center[0], center[1], width, 20);
+
+    // Insert each particle into the tree
+    if(maxX == dimSimulationArea/2 && minY == -dimSimulationArea/2){
+        std::cout<<"caso particolarissimo"<<std::endl;
+        for (auto& particle : particles) {
+            if(particle.getPos()[0] >= minX && particle.getPos()[0] <= maxX && particle.getPos()[1] <= maxY && particle.getPos()[1] >= minY){
+                std::shared_ptr<Particle<Dimension>> p = std::make_shared<Particle<Dimension>>(particle);
+                root->insert(p);
+            }
+        }
+
+    } else if(minY == -dimSimulationArea/2){
+        std::cout<<"minY == -dimSimulationArea/2"<<std::endl;
+        for (auto& particle : particles) {
+            if(particle.getPos()[0] >= minX && particle.getPos()[0] < maxX && particle.getPos()[1] <= maxY && particle.getPos()[1] >= minY){
+                std::shared_ptr<Particle<Dimension>> p = std::make_shared<Particle<Dimension>>(particle);
+                root->insert(p);
+            }
+        }
+        
+    } else if(maxX == dimSimulationArea/2){
+        std::cout<<"maxX == dimSimulationArea/2"<<std::endl;
+        for (auto& particle : particles) {
+            if(particle.getPos()[0] >= minX && particle.getPos()[0] <= maxX && particle.getPos()[1] <= maxY && particle.getPos()[1] > minY){
+                std::shared_ptr<Particle<Dimension>> p = std::make_shared<Particle<Dimension>>(particle);
+                root->insert(p);
+            }
+        }
+    } else {
+        std::cout<<"caso normale"<<std::endl;
+        for (auto& particle : particles) {
+            if(particle.getPos()[0] >= minX && particle.getPos()[0] < maxX && particle.getPos()[1] <= maxY && particle.getPos()[1] > minY){
+                std::shared_ptr<Particle<Dimension>> p = std::make_shared<Particle<Dimension>>(particle);
+                root->insert(p);
+            }
+        }
+    }
+    std::cout<<"end  ------------"<<std::endl;
+    return root;
+}
+
+
+
 /**
  * @brief Template function that generates particles in order to perform the simulation. 
  * First it creates randomly (using the random library) the distributions for all the parameters, then it checks if the function struggles to generate non-overlapping particles: 
@@ -437,56 +583,41 @@ void printInitialStateOnFile(std::vector<Particle<Dimension>>* particles, int di
  * 
  **/
 template<size_t Dimension>
-void main2DSimulationBarnesHut(std::vector<Particle<Dimension>>* particles_, int forceType, int simType, double delta_t, int dimSimulationArea, int iterationNumber, int numParticles, int mass, int maxVel, int maxRadius, double softening, std::string fileName, int speedUp){
+void serialBarnesHut(int iterationNumber, std::vector<Particle<Dimension>>* particles, int dimSimulationArea, double softening, double delta_t, std::string fileName, std::ofstream& file, Force<Dimension>& f, int speedUp){
     
     time_t start, end;
     //std::vector<Particle<Dimension>> particles; 
-    Force<Dimension>* f;
-    if(forceType == 1 ) f = new CoulombForce<Dimension>();
-    else f = new GravitationalForce<Dimension>();
-
-    std::vector<Particle<Dimension>> particles = *particles_;
-    std::ofstream file(fileName);
-
-    //particles = generateOrbitTestParticles<Dimension>(dimSimulationArea, 10000);
-
-    start = time(NULL);
-    //particles = generateRandomParticles<Dimension>(numParticles, dimSimulationArea, (forceType)? -mass:1, mass, maxVel, 1, maxRadius, forceType);
-    end = time(NULL);
-    std::cout << "Time taken by generateRandomParticles function: " << end - start << " seconds" << std::endl;
-
-    printInitialStateOnFile(&particles, dimSimulationArea, fileName, file, iterationNumber, speedUp);
-
 
     double theta = 0.5;
     std::unique_ptr<QuadtreeNode<Dimension>> quadtree;
+    int numParticles = (*particles).size();
 
     // Inizio dell'algoritmo di Barnes-Hut
     
     start = time(NULL);
     for (int iter = 0; iter < iterationNumber; ++iter) {
         
-        quadtree = createQuadTree(particles, 2*dimSimulationArea);
+        quadtree = createQuadTree(*particles, 2*dimSimulationArea);
 
         // Calcolo delle forze per ogni particella
-        for (size_t i = 0; i < numParticles; ++i) {
+        for (int i = 0; i < numParticles; ++i) {
 
             //calculateNetForce(treeRoot, &particles[i], theta, *f);
-            std::shared_ptr<Particle<Dimension>> p = std::make_shared<Particle<Dimension>>(particles[i]);
+            std::shared_ptr<Particle<Dimension>> p = std::make_shared<Particle<Dimension>>((*particles)[i]);
             
-            calculateNetForceQuadtree(quadtree, p, theta, *f, dimSimulationArea, softening);
+            calculateNetForceQuadtree(quadtree, p, theta, f, dimSimulationArea, softening);
             if(p != nullptr)
-                particles[i].addForce(p->getForce());
-                particles[i].setVel(p->getVel());
+                (*particles)[i].addForce(p->getForce());
+                (*particles)[i].setVel(p->getVel());
         }
 
         // Aggiornamento delle posizioni delle particelle
-        for (auto& particle : particles) {  
-            particle.updateAndReset(delta_t);
+        for (size_t i = 0; i < numParticles; ++i) { 
+             (*particles)[i].updateAndReset(delta_t);
         }
 
         for (size_t i = 0; i < numParticles; ++i) {
-            Particle<Dimension> q = particles[i];
+            Particle<Dimension>& q = (*particles)[i];
             if (file.is_open()) {
                 file << q.getId() << ",";
                 const auto& pos = q.getPos();
@@ -513,85 +644,74 @@ void main2DSimulationBarnesHut(std::vector<Particle<Dimension>>* particles_, int
 
 
 template<size_t Dimension>
-void main2DSimulationBarnesHutParallel(std::vector<Particle<Dimension>>* particles_, int forceType, int simType, double delta_t, int dimSimulationArea, int iterationNumber, int numParticles, int mass, int maxVel, int maxRadius, double softening, std::string fileName, int speedUp){
-    
+void parallelBarnesHut(int iterationNumber, std::vector<Particle<Dimension>>* particles, int dimSimulationArea, double softening, double delta_t, std::string fileName, std::ofstream& file, Force<Dimension>& f, int speedUp){
 
-    particles_->size() < omp_get_max_threads()? omp_set_num_threads(particles_->size()):omp_set_num_threads(omp_get_max_threads());  
+    particles->size() < omp_get_max_threads()? omp_set_num_threads(particles->size()):omp_set_num_threads(omp_get_max_threads());  
     int num_threads = omp_get_max_threads();
-
-    std::vector<Particle<Dimension>> particles = *particles_;
     time_t start, end, start1, end1;
-    
-    Force<Dimension>* f;
-    if(forceType == 1 ) f = new CoulombForce<Dimension>();
-    else f = new GravitationalForce<Dimension>();
-
-    std::ofstream file(fileName);
-
-    //particles = generateOrbitTestParticles<Dimension>(dimSimulationArea, 10000);
-
-    start = time(NULL);
-    //particles = generateRandomParticles<Dimension>(numParticles, dimSimulationArea, (forceType)? -mass:1, mass, maxVel, 1, maxRadius, forceType);
-    end = time(NULL);
-    std::cout << "Time taken by generateRandomParticles function: " << end - start << " seconds" << std::endl;
-
-    printInitialStateOnFile(&particles, dimSimulationArea, fileName, file, iterationNumber, speedUp);
 
     double theta = 0.5;
     std::unique_ptr<QuadtreeNode<Dimension>> quadtree;
 
     double totalTreeTime = 0.0;
 
+    if(num_threads % 4 != 0){
+        omp_set_num_threads(num_threads - num_threads%4);
+    }
+
     // Inizio dell'algoritmo di Barnes-Hut
     
     start1 = time(NULL);
+    iterationNumber = 1;
     for (int iter = 0; iter < iterationNumber; ++iter) {
         //std::cout<<"fanculo"<<std::endl;
         start = time(NULL);;
-        quadtree = createQuadTree(particles, 2*dimSimulationArea);
-        end = time(NULL);
-        totalTreeTime = totalTreeTime + end - start;
-        #pragma omp parallel shared(particles, f, iter, delta_t, file, softening, dimSimulationArea, num_threads, quadtree)
-        {
-
-            // Calcolo delle forze per ogni particella
-            #pragma omp for schedule(static, particles.size()/omp_get_num_threads())
-            for (size_t i = 0; i < numParticles; ++i) {
-
-                //calculateNetForce(treeRoot, &particles[i], theta, *f);
-                std::shared_ptr<Particle<Dimension>> p = std::make_shared<Particle<Dimension>>(particles[i]);
-                
-                calculateNetForceQuadtree(quadtree, p, theta, *f, dimSimulationArea, softening);
-                if(p != nullptr)
-                    particles[i].addForce(p->getForce());
-                    particles[i].setVel(p->getVel());
-            }
-
-            // Aggiornamento delle posizioni delle particelle
-            #pragma omp for schedule(static, particles.size()/omp_get_num_threads())
-            for (auto& particle : particles) {  
-                particle.updateAndReset(delta_t);
-            }
-        }
-
-        for (size_t i = 0; i < numParticles; ++i) {
-            Particle<Dimension> q = particles[i];
-            if (file.is_open()) {
-                file << q.getId() << ",";
-                const auto& pos = q.getPos();
-                for (size_t i = 0; i < Dimension; ++i) {
-                    file << pos[i];
-                    if (i < Dimension - 1) {
-                        file << ",";
-                    }
-                }
-                file << std::endl;
-            } else {
-                std::cout << "Unable to open file";
-            }
-        }
-
-        quadtree.reset();      
+        int a;
+        a = generateTreeParallel<Dimension>(particles, 2*dimSimulationArea);
+        //quadtree = createQuadTreeParallel(particles, 2*dimSimulationArea, num_threads);
+        //end = time(NULL);
+        //totalTreeTime = totalTreeTime + end - start;
+        //#pragma omp parallel shared(particles, f, iter, delta_t, file, softening, dimSimulationArea, num_threads, quadtree)
+        //{
+//
+        //    // Calcolo delle forze per ogni particella
+        //    #pragma omp for schedule(static, particles.size()/omp_get_num_threads())
+        //    for (size_t i = 0; i < numParticles; ++i) {
+//
+        //        //calculateNetForce(treeRoot, &particles[i], theta, *f);
+        //        std::shared_ptr<Particle<Dimension>> p = std::make_shared<Particle<Dimension>>(particles[i]);
+        //        
+        //        calculateNetForceQuadtree(quadtree, p, theta, *f, dimSimulationArea, softening);
+        //        if(p != nullptr)
+        //            particles[i].addForce(p->getForce());
+        //            particles[i].setVel(p->getVel());
+        //    }
+//
+        //    // Aggiornamento delle posizioni delle particelle
+        //    #pragma omp for schedule(static, particles.size()/omp_get_num_threads())
+        //    for (auto& particle : particles) {  
+        //        particle.updateAndReset(delta_t);
+        //    }
+        //}
+//
+        //for (size_t i = 0; i < numParticles; ++i) {
+        //    Particle<Dimension> q = particles[i];
+        //    if (file.is_open()) {
+        //        file << q.getId() << ",";
+        //        const auto& pos = q.getPos();
+        //        for (size_t i = 0; i < Dimension; ++i) {
+        //            file << pos[i];
+        //            if (i < Dimension - 1) {
+        //                file << ",";
+        //            }
+        //        }
+        //        file << std::endl;
+        //    } else {
+        //        std::cout << "Unable to open file";
+        //    }
+        //}
+//
+        //quadtree.reset();      
 
     }
     std::cout << "Time taken by createQuadTree function: " << totalTreeTime << " seconds" << std::endl;
@@ -680,19 +800,17 @@ double computeRatio(const std::array<double, Dimension>& pos, const std::array<d
  * 
  **/
 template<size_t Dimension>
-void main2DSimulation(std::vector<Particle<Dimension>>* particles_, int forceType, int simType, double delta_t, int dimSimulationArea, int iterationNumber, int numParticles, int mass, int maxVel, int maxRadius, double softening, std::string fileName, int speedUp){
+void main2DSimulation(int forceType, int simType, double delta_t, int dimSimulationArea, int iterationNumber, int numParticles, int mass, int maxVel, int maxRadius, double softening, std::string fileName, int speedUp){
     
     time_t start, end;
-    //std::vector<Particle<Dimension>> particles; 
-    std::vector<Particle<Dimension>> particles = *particles_;
-    
+    std::vector<Particle<Dimension>> particles;     
     Force<Dimension>* f;
     if(forceType == 1 ) f = new CoulombForce<Dimension>();
     else f = new GravitationalForce<Dimension>();
     
     std::ofstream file(fileName);
     start = time(NULL);
-    //particles = generateRandomParticles<Dimension>(numParticles, dimSimulationArea, (forceType)? -mass:1, mass, maxVel, 1, maxRadius, forceType);
+    particles = generateRandomParticles<Dimension>(numParticles, dimSimulationArea, (forceType)? -mass:1, mass, maxVel, 1, maxRadius, forceType);
     //particles = generateOrbitTestParticles<Dimension>(dimSimulationArea, 10000);
     end = time(NULL);
     std::cout << "Time taken by generateRandomParticles function: " << end - start << " seconds" << std::endl;
@@ -704,12 +822,21 @@ void main2DSimulation(std::vector<Particle<Dimension>>* particles_, int forceTyp
         serialSimulation<Dimension>(iterationNumber, &particles, dimSimulationArea, softening, delta_t, fileName, file, *f, speedUp);
         end = time(NULL);
         std::cout << "Time taken by serial simulation: " << end - start << " seconds" << std::endl;
-
     }else if(simType == 1){
         start = time(NULL);
         parallelSimulation<Dimension>(iterationNumber, &particles, dimSimulationArea, softening, delta_t, fileName, file, *f, speedUp);
         end = time(NULL);
         std::cout << "Time taken by parallel simulation: " << end - start << " seconds" << std::endl;
+    }else if(simType == 2){
+        start = time(NULL);
+        serialBarnesHut<Dimension>(iterationNumber, &particles, dimSimulationArea, softening, delta_t, fileName, file, *f, speedUp);
+        end = time(NULL);
+        std::cout << "Time taken by serial Barnes Hut: " << end - start << " seconds" << std::endl;
+    }else if(simType == 3){
+        start = time(NULL);
+        parallelBarnesHut<Dimension>(iterationNumber, &particles, dimSimulationArea, softening, delta_t, fileName, file, *f, speedUp);
+        end = time(NULL);
+        std::cout << "Time taken by parallel Barnes Hut: " << end - start << " seconds" << std::endl;
     }
 
     file.close();
@@ -783,18 +910,17 @@ void showHelp() {
 int main(int argc, char** argv) {
 
     int dim = 2; 
-    int simType = 0;
+    int simType = 3;
     int forceType = 0;
     double delta_t = 0.01;
-    int dimSimulationArea = 10000; 
+    int dimSimulationArea = 200; 
     int iterationNumber = 1000; 
-    int numParticles = 1000;
+    int numParticles = 10;
     int mass = 50; 
     int maxVel = 50; 
     int maxRadius = 15; 
     double softening = 0.7;
     int speedUp = 1;
-    std::vector<Particle<2>> particles;
     std::string fileName = "../graphics/coordinates.txt";
     std::string fileName2 = "../graphics/coordinates2.txt";
 
@@ -826,7 +952,7 @@ int main(int argc, char** argv) {
         if (strcmp(argv[i], "-simT") == 0) {
              if (++i < argc) {
                 simType = atoi(argv[i]);
-                if(simType != 0 && simType != 1) {
+                if(simType != 0 && simType != 1 && simType!= 2 && simType != 3) {
                     std::cout << "No feasible simulation." << std::endl;
                     return 1;
                 }
@@ -992,15 +1118,8 @@ int main(int argc, char** argv) {
         
     }
     
-
     if(dim == 2) {
-        particles = generateRandomParticles<2>(numParticles, dimSimulationArea, (forceType)? -mass:1, mass, maxVel, 1, maxRadius, forceType);
-    
-        //main2DSimulationBarnesHut<2>(&particles, forceType, simType, delta_t, dimSimulationArea, iterationNumber, numParticles, mass, maxVel, maxRadius, softening, fileName2, speedUp); 
-        
-        main2DSimulationBarnesHutParallel<2>(&particles, forceType, simType, delta_t, dimSimulationArea, iterationNumber, numParticles, mass, maxVel, maxRadius, softening, fileName2, speedUp); 
-        
-        main2DSimulation<2>(&particles, forceType, 1, delta_t, dimSimulationArea, iterationNumber, numParticles, mass, maxVel, maxRadius, softening, fileName, speedUp);
+        main2DSimulation<2>(forceType, simType, delta_t, dimSimulationArea, iterationNumber, numParticles, mass, maxVel, maxRadius, softening, fileName, speedUp);
     } else if (dim == 3) {
         //main3DSimulation<3>(forceType, simType, delta_t, dimSimulationArea, iterationNumber, numParticles, mass, maxVel, maxRadius, softening, fileName, speedUp);
     }
