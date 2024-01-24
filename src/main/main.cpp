@@ -476,9 +476,9 @@ void main2DSimulationBarnesHut(int forceType, int simType, double delta_t, int d
     
     time_t start, end;
     std::vector<Particle<Dimension>> particles; 
-    numParticles = 1000;
+    numParticles = 8;
     
-    delta_t = 0.1;
+    delta_t = 1;
     iterationNumber = 1000;
     dimSimulationArea = 4000;
     Force<Dimension>* f;
@@ -487,10 +487,10 @@ void main2DSimulationBarnesHut(int forceType, int simType, double delta_t, int d
     
     std::ofstream file(fileName);
 
-    particles = generateOrbitTestParticles<Dimension>(dimSimulationArea, 10000);
+    //particles = generateOrbitTestParticles<Dimension>(dimSimulationArea, 10000);
 
     start = time(NULL);
-    //particles = generateRandomParticles<Dimension>(numParticles, dimSimulationArea, (forceType)? -mass:1, mass, maxVel, 1, maxRadius, forceType);
+    particles = generateRandomParticles<Dimension>(numParticles, dimSimulationArea, (forceType)? -mass:1, mass, maxVel, 1, maxRadius, forceType);
     end = time(NULL);
     std::cout << "Time taken by generateRandomParticles function: " << end - start << " seconds" << std::endl;
 
@@ -531,24 +531,27 @@ void main2DSimulationBarnesHut(int forceType, int simType, double delta_t, int d
 
     //calcola le forze su ogni particella
     //treeRoot = new TreeNode<Dimension>(-dimSimulationArea, -dimSimulationArea, 2*dimSimulationArea);
-
+    std::unique_ptr<QuadtreeNode<Dimension>> quadtree = createQuadTree(particles, 2*dimSimulationArea);
     for(size_t iter = 0; iter<iterationNumber; ++iter){
 
         //TreeNode<Dimension>* treeRoot = createTree(particles, 2*dimSimulationArea);
-        
-        std::unique_ptr<QuadtreeNode<Dimension>> quadtree = createQuadTree(particles, 2*dimSimulationArea);
         std::cout << iter << std::endl;
-
+        quadtree = createQuadTree(particles, 2*dimSimulationArea);
+        
+        //std::cout << "\n\nTree structure: "<< std::endl;
         for (size_t i = 0; i < numParticles; ++i) {
-            //calculateNetForce(treeRoot, &particle, theta, *f);
+            //calculateNetForce(treeRoot, &particles[i], theta, *f);
             std::shared_ptr<Particle<Dimension>> p = std::make_shared<Particle<Dimension>>(particles[i]);
+            //std::cout << "Particle " << &particles[i] << std::endl;
             calculateNetForceQuadtree(quadtree, p, theta, *f);
+            particles[i].addForce(p->getForce());
         }
-    
+        
         for (auto& particle : particles) {
+
             particle.updateAndReset(delta_t);
         }
-
+        
         for (size_t i = 0; i < numParticles; ++i) {
             Particle<Dimension> q = particles[i];
             if (file.is_open()) {
@@ -564,8 +567,8 @@ void main2DSimulationBarnesHut(int forceType, int simType, double delta_t, int d
             } else {
                 std::cout << "Unable to open file";
             }
-        }
-
+        } 
+        
         //treeRoot->deleteNodeRecursive(treeRoot);
 
     }
@@ -668,16 +671,20 @@ void calculateNetForce(TreeNode<Dimension>* node, Particle<Dimension>* b, double
 
 template <size_t Dimension>
 void calculateNetForceQuadtree(const std::unique_ptr<QuadtreeNode<Dimension>>& node, std::shared_ptr<Particle<Dimension>> p, double theta, Force<Dimension>& f) {
+    std::cout << "Inizio"<< std::endl;
     double s, d;
+    
     std::array<double, Dimension> force_qk;
     std::unique_ptr<Particle<Dimension>> approxParticle;
 
     if(node == nullptr) {
         return;
     }
-
-    if(node->isLeaf() && node->getParticle() != nullptr && node->getParticle() != p) {
+    //std::cout << "is leaf: " << node->isLeaf() << std::endl;
+    if(node->isLeaf() && node->getParticle() != nullptr && node->getParticle()->getId() != p->getId()){
+        //std::cout << "Node is a leaf and contains a different particle. Applying direct force." << std::endl;
         force_qk = f.calculateForce(*p, *node->getParticle());
+        //std::cout << "force_qk: " << force_qk[0]<< " : " <<force_qk[1]<<std::endl;
         p->addForce(force_qk);
     }
     else if(!node->isLeaf()){
@@ -691,12 +698,14 @@ void calculateNetForceQuadtree(const std::unique_ptr<QuadtreeNode<Dimension>>& n
             force_qk = f.calculateForce(*p, *approxParticle);
             p->addForce(force_qk);
         }
-    }
-    else {
-        for(auto& child : node->getChildren()) {
-            calculateNetForceQuadtree(child, p, theta, f);
+        else {
+            for(auto& child : node->getChildren()) {
+                
+                calculateNetForceQuadtree(child, p, theta, f);
+            }
         }
     }
+    std::cout << "Fine"<< std::endl;
 }
 
 template <size_t Dimension>
