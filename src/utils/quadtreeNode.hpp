@@ -14,10 +14,10 @@ class Particle;
 template <size_t Dimension>
 class QuadtreeNode{
     public:
-    QuadtreeNode(double x, double y, double w) 
+    QuadtreeNode(double x, double y, double w, int maxDepthValue = 10) 
         : width(w), leaf(true), //particle(nullptr), 
           totalCenter(std::array<double, Dimension>()), center({x,y}), 
-          totalMass(0.0), count(0) {
+          totalMass(0.0), count(0), maxDepth(maxDepthValue)  {
           //children.fill(nullptr);
     }
 
@@ -65,6 +65,13 @@ class QuadtreeNode{
         double x = center[0];
         double y = center[1];
 
+        if(width == 0) return;
+
+        //std::cout<<"---------split"<<std::endl;
+        //std::cout<<width<<std::endl;
+        //std::cout<<x<<std::endl;
+        //std::cout<<y<<std::endl;
+
         children[0] = std::make_unique<QuadtreeNode<Dimension>>(x - quarterWidth, y - quarterWidth, halfWidth);
         children[1] = std::make_unique<QuadtreeNode<Dimension>>(x + quarterWidth, y - quarterWidth, halfWidth);
         children[2] = std::make_unique<QuadtreeNode<Dimension>>(x - quarterWidth, y + quarterWidth, halfWidth);
@@ -83,7 +90,7 @@ class QuadtreeNode{
         return -1;
     }
 
-    void insert(std::shared_ptr<Particle<Dimension>> p){
+    void insert(std::shared_ptr<Particle<Dimension>> p, int depth = 0){
         updateAttributes(p);
 
         if(leaf && particle == nullptr){
@@ -92,6 +99,10 @@ class QuadtreeNode{
         }
 
         if(leaf && particle != nullptr){
+            if (depth >= maxDepth) {
+                // Gestisci la situazione, ad esempio ignorando l'inserimento o aggregando le particelle
+                return;
+            }
             split();
             int index = getQuadrantIndex(particle->getPos());
             if(index != -1) children[index]->insert(particle);
@@ -107,7 +118,7 @@ class QuadtreeNode{
                 cerr << "Errore: nodo figlio non inizializzato." << endl;
                 return;
             }
-            children[index]->insert(p);
+            children[index]->insert(p, depth + 1);
         }
         else{
             cerr << "Errore: indice del quadrante non valido per la nuova particella." << endl;
@@ -168,6 +179,7 @@ class QuadtreeNode{
     std::array<double, Dimension> center;
     double totalMass;
     int count; 
+    int maxDepth;
 };
 
 #endif // QUADTREE_NODE_H

@@ -16,6 +16,7 @@
 template<size_t Dimension>
 std::unique_ptr<QuadtreeNode<Dimension>> createQuadTree(std::vector<Particle<Dimension>>& particles, double dimSimulationArea) {
     if (particles.empty()) {
+        std::cout<<"empty"<<std::endl;
         return nullptr;
     }
 
@@ -39,6 +40,8 @@ std::unique_ptr<QuadtreeNode<Dimension>> createQuadTree(std::vector<Particle<Dim
 
     return root;
 }
+
+
 
 
 /**
@@ -438,7 +441,7 @@ void main2DSimulationBarnesHut(int forceType, int simType, double delta_t, int d
     
     time_t start, end;
     std::vector<Particle<Dimension>> particles; 
-    numParticles = 8;
+    numParticles = 600;
     
     delta_t = 1;
     iterationNumber = 1000;
@@ -465,28 +468,32 @@ void main2DSimulationBarnesHut(int forceType, int simType, double delta_t, int d
 
     double theta = 0.5;
 
-    std::unique_ptr<QuadtreeNode<Dimension>> quadtree = createQuadTree(particles, 2*dimSimulationArea);
+     std::unique_ptr<QuadtreeNode<Dimension>> quadtree;
 
-    for(size_t iter = 0; iter<iterationNumber; ++iter){
 
-        //TreeNode<Dimension>* treeRoot = createTree(particles, 2*dimSimulationArea);
-        std::cout << iter << std::endl;
+    // Inizio dell'algoritmo di Barnes-Hut
+    for (int iter = 0; iter < iterationNumber; ++iter) {
+        std::cout<<"---------------------"<<std::endl;
+        std::cout<<iter<<std::endl;
+        // Creazione del quadtree
+
         quadtree = createQuadTree(particles, 2*dimSimulationArea);
-        
-        //std::cout << "\n\nTree structure: "<< std::endl;
+
+        // Calcolo delle forze per ogni particella
         for (size_t i = 0; i < numParticles; ++i) {
             //calculateNetForce(treeRoot, &particles[i], theta, *f);
             std::shared_ptr<Particle<Dimension>> p = std::make_shared<Particle<Dimension>>(particles[i]);
             //std::cout << "Particle " << &particles[i] << std::endl;
             calculateNetForceQuadtree(quadtree, p, theta, *f);
-            particles[i].addForce(p->getForce());
+            if(p != nullptr)
+                particles[i].addForce(p->getForce());
         }
-        
-        for (auto& particle : particles) {
 
+        // Aggiornamento delle posizioni delle particelle
+        for (auto& particle : particles) {
             particle.updateAndReset(delta_t);
         }
-        
+
         for (size_t i = 0; i < numParticles; ++i) {
             Particle<Dimension> q = particles[i];
             if (file.is_open()) {
@@ -502,9 +509,12 @@ void main2DSimulationBarnesHut(int forceType, int simType, double delta_t, int d
             } else {
                 std::cout << "Unable to open file";
             }
-        } 
-        
-        //treeRoot->deleteNodeRecursive(treeRoot);
+        }
+
+        //quadtree->printTree();
+
+        // Pulizia del quadtree per la prossima iterazione
+        quadtree.reset();
 
     }
 
@@ -524,7 +534,7 @@ To calculate the net force acting on body b, use the following recursive procedu
 */
 template <size_t Dimension>
 void calculateNetForceQuadtree(const std::unique_ptr<QuadtreeNode<Dimension>>& node, std::shared_ptr<Particle<Dimension>> p, double theta, Force<Dimension>& f) {
-    std::cout << "Inizio"<< std::endl;
+   
     double s, d;
     
     std::array<double, Dimension> force_qk;
@@ -558,7 +568,6 @@ void calculateNetForceQuadtree(const std::unique_ptr<QuadtreeNode<Dimension>>& n
             }
         }
     }
-    std::cout << "Fine"<< std::endl;
 }
 
 template <size_t Dimension>
