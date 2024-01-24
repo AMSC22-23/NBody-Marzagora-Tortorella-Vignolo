@@ -24,12 +24,7 @@ public:
 
     // Destructor for the TreeNode class
     // Responsible for cleaning up dynamically allocated child TreeNodes
-    ~TreeNode() {
-        for (auto& child : children) {
-            if(child->approximatedParticle != nullptr) delete child->approximatedParticle;
-            delete child;  // Delete each dynamically allocated child
-        }
-    }
+    ~TreeNode() {}
 
     // Getters for private attributes
     double getX() const {
@@ -192,9 +187,24 @@ public:
         return new Particle<Dimension>(count,  totalMass, totalCenter, {0.0, 0.0}, 1.0, false);
     }
 
-    // Method that returns the approximated particle for the node
+    // method that gets the approximated particle
     Particle<Dimension>* getApproximatedParticle() const {
         return approximatedParticle;
+    }
+
+    void deleteNodeRecursive(TreeNode<Dimension>* node) {
+        if (node == nullptr) {
+            return;
+        }
+
+        // Ricorsivamente elimina i figli
+        for (int i = 0; i < 4; ++i) {
+            if(node->children[i] != nullptr) deleteNodeRecursive(node->children[i]);
+        }
+
+        // Elimina il nodo corrente
+        delete node->approximatedParticle;
+        delete node;
     }
 
 private:
