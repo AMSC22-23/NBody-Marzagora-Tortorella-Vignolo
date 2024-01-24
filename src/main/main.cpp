@@ -1,7 +1,6 @@
 #include <vector>
 #include "../utils/particle.hpp"
 #include "../utils/force.hpp"
-#include "../utils/treenode.hpp"
 #include "../utils/quadtreeNode.hpp"
 #include <cstdlib> 
 #include <ctime>
@@ -13,33 +12,6 @@
 #include <omp.h>
 #include <cstring>
 #include <memory>
-
-// Function to create the tree structure from a vector of particles
-template<size_t Dimension>
-TreeNode<Dimension>* createTree(std::vector<Particle<Dimension>>& particles, double dimSimulationArea) {
-    if (particles.empty()) {
-        return nullptr;
-    }
-
-    // Determine the simulation boundaries (this might need to be adjusted)
-    double minX =  -1 * dimSimulationArea * 0.5;
-    double maxX = dimSimulationArea * 0.5;
-    double minY = minX;
-    double maxY = maxX;
-
-    //std::cout<< dimSimulationArea<<"->"<< minX << ", " << maxX <<endl;
-
-    // Create the root of the tree
-    double width = std::max(maxX - minX, maxY - minY);
-    TreeNode<Dimension>* root = new TreeNode<Dimension>(minX + width / 2, minY + width / 2, width);
-
-    // Insert each particle into the tree
-    for (auto& particle : particles) {
-        root->insert(&particle);
-    }
-
-    return root;
-}
 
 template<size_t Dimension>
 std::unique_ptr<QuadtreeNode<Dimension>> createQuadTree(std::vector<Particle<Dimension>>& particles, double dimSimulationArea) {
@@ -452,16 +424,6 @@ void printInitialStateOnFile(std::vector<Particle<Dimension>>* particles, int di
     }
 }
 
-template<size_t Dimension>
-void deleteTree(TreeNode<Dimension>* node) {
-    if (node != nullptr) {
-        for (int i = 0; i < 4; ++i) {
-            TreeNode<Dimension>* child = node->getChildren()[i];
-            if(child != nullptr) child->deleteQuadtree(child);
-        }
-    }
-}
-
 /**
  * @brief Template function that wraps main function for the 2D simulation: calls the function that generates the particles, the one that prints the initial states on the file and then
  * calls the function which starts the simulation chosen by the user.
@@ -500,38 +462,11 @@ void main2DSimulationBarnesHut(int forceType, int simType, double delta_t, int d
     for (auto& particle : particles) {
         particle.printStates();
     }
-    //std::cout << "\nPosition of particles generated: "<< std::endl;
-    //for(auto p:particles){
-    //    std::cout<< p.getPos()[0]<< ", "<< p.getPos()[1]<<endl;
-    //}
 
     double theta = 0.5;
 
-    //std::unique_ptr<QuadtreeNode<Dimension>> quadtree = createQuadTree(particles, 2*dimSimulationArea);
-
-    //TreeNode<Dimension>* treeRoot = createTree(particles, 2*dimSimulationArea);
-    //int count = 0;
-
-    //std::cout << "\n\nTree structure: "<< std::endl;
-    ////After building the tree
-    //if (treeRoot != nullptr) {
-    //    treeRoot->printTree(); // Display the tree structure
-    //}
-
-//    std::cout << "\n\nTree structure: "<< std::endl;
-//    //After building the tree
-//    if (quadtree != nullptr) {
-//        quadtree->printTree(); // Display the tree structure
-//    }
-
-    // TEST calculateNetForce on a particle: 
-
-    // Choose a particle for which you want to calculate the net force
-    //Particle<Dimension>* targetParticle = &particles[2]; // example: first particle in the list
-
-    //calcola le forze su ogni particella
-    //treeRoot = new TreeNode<Dimension>(-dimSimulationArea, -dimSimulationArea, 2*dimSimulationArea);
     std::unique_ptr<QuadtreeNode<Dimension>> quadtree = createQuadTree(particles, 2*dimSimulationArea);
+
     for(size_t iter = 0; iter<iterationNumber; ++iter){
 
         //TreeNode<Dimension>* treeRoot = createTree(particles, 2*dimSimulationArea);
@@ -573,30 +508,7 @@ void main2DSimulationBarnesHut(int forceType, int simType, double delta_t, int d
 
     }
 
-
     file.close();
-    
-    // Clean up the tree
-    //delete treeRoot;
-
-    //for (double currentTime = 0; currentTime < totalTime; currentTime += deltaTime) {
-    //    // Costruisci l'albero di Barnes-Hut con le particelle attuali
-    //    
-    //    // After building the tree
-    //    if (treeRoot != nullptr) {
-    //        treeRoot->printTree(); // Display the tree structure
-    //    }
-    //
-    //    // Calcola le forze su ogni particella
-    //    calculateForces(treeRoot, 0.5);
-    //
-    //    // Aggiorna la posizione e la velocità di ogni particella
-    //    for (auto& particle : particles) {
-    //        UpdateParticle(particle, deltaTime);
-    //    }
-    //
-    //    // Eventualmente, salva lo stato attuale per l'analisi o la visualizzazione
-    //}
 
 }
 
@@ -610,65 +522,6 @@ To calculate the net force acting on body b, use the following recursive procedu
 3)Otherwise, run the procedure recursively on each of the current node’s children.
 
 */
-
-
-template <size_t Dimension>
-void calculateNetForce(TreeNode<Dimension>* node, Particle<Dimension>* b, double theta, Force<Dimension>& f) {
-
-    std::array<double,Dimension> force_qk;
-
-    if (node == nullptr) {
-        //std::cout << "\tNode is null. Exiting function." << std::endl; 
-        return;
-    }
-
-    // Check if the node is a leaf and not the same as the particle we're calculating the force on
-    if (node->isLeaf() && node->getParticle() != nullptr && node->getParticle() != b) {
-        //std::cout << "\tNode is a leaf and contains a different particle. Applying direct force." << std::endl;
-        
-        force_qk = f.calculateForce(*b, *node->getParticle());
-        b->addForce(force_qk);
-        //std::cout << "\tforce_qk: " << force_qk[0]<< " : " <<force_qk[1]<<std::endl;
-
-    } 
-    else if (!node->isLeaf()) {
-        //std::cout << "\tNode is not a leaf. Checking if approximation can be used." << std::endl;
-
-        // Compute s/d ratio (size of the region represented by the node divided by distance)
-        double s = node->getWidth(); // Assuming getWidth() returns the size of the node region
-
-        //double d = std::sqrt(b->squareDistance(node->getTotalCenter())); // Using squareDistance from Particle class
-        double d = std::sqrt(b->squareDistance(*node->getApproximatedParticle())); // Using squareDistance from Particle class
-
-        // Check for division by zero or very small d
-        if (d == 0) {
-            //std::cout << "\tDistance is zero, avoiding division by zero." << std::endl;
-            return;
-        }
-        
-        //std::cout << "\ts/d ratio: " << s/d << " (Threshold: " << theta << ")" << std::endl;
-
-        if (s / d < theta) {
-            //std::cout << "\tUsing approximation to apply force." << std::endl;
-
-            force_qk = f.calculateForce(*b, *node->getApproximatedParticle());
-            b->addForce(force_qk);
-            //std::cout << "\tforce_qk: " << force_qk[0]<< " : " <<force_qk[1]<<std::endl;
-            //applyApproximateForce(b, node); // Apply approximate force
-        } 
-        else {
-            //std::cout << "\ts/d ratio too high. Recursing into children nodes." << std::endl;
-            // Recursively calculate force on children
-            for (auto& child : node->getChildren()) {
-                calculateNetForce(child, b, theta, f);
-            }
-        }
-    }else{
-        //std::cout << "\tNode is a leaf." << std::endl;
-
-    }
-}
-
 template <size_t Dimension>
 void calculateNetForceQuadtree(const std::unique_ptr<QuadtreeNode<Dimension>>& node, std::shared_ptr<Particle<Dimension>> p, double theta, Force<Dimension>& f) {
     std::cout << "Inizio"<< std::endl;
@@ -717,69 +570,6 @@ double computeRatio(const std::array<double, Dimension>& pos, const std::array<d
     }
 
     return width/std::sqrt(sum);
-}
-
-template <size_t Dimension>
-void ApplyApproximateForce(Particle<Dimension>* particle, TreeNode<Dimension>* node) {
-    double G = 6.67430e-11; // Gravitational constant
-
-    // Calculate the distance between the particle and the node's center of mass
-    std::array<double, Dimension> diff;
-    for (size_t i = 0; i < Dimension; ++i) {
-        diff[i] = node->getTotalCenter()[i] - particle->getPos()[i];
-    }
-    double distSquared = std::inner_product(diff.begin(), diff.end(), diff.begin(), 0.0);
-
-    // Avoid division by zero or very small distances
-    if (distSquared < 1e-10) {
-        return;
-    }
-
-    // Calculate force magnitude
-    double forceMagnitude = G * (particle->getProperty() * node->getTotalMass()) / distSquared;
-
-    // Normalize the direction and scale by force magnitude
-    double length = std::sqrt(distSquared);
-    std::array<double, Dimension> force;
-    for (size_t i = 0; i < Dimension; ++i) {
-        force[i] = (diff[i] / length) * forceMagnitude;
-    }
-
-    // Add the calculated force to the particle
-    particle->addForce(force);
-}
-
-template <size_t Dimension>
-void ApplyDirectForce(Particle<Dimension>* particle1, Particle<Dimension>* particle2) {
-    std::cout<<"\tApplyDirectForce"<<endl;
-    double G = 6.67430e-11; // Gravitational constant
-
-    double distSquared = particle1->squareDistance(*particle2);
-
-    // Avoid division by zero or very small distances
-    if (distSquared < 1e-10) {
-        return;
-    }
-
-    // Calculate force magnitude
-    double forceMagnitude = G * (particle1->getProperty() * particle2->getProperty()) / distSquared;
-
-    // Calculate force direction
-    std::array<double, Dimension> forceDirection;
-    for (size_t i = 0; i < Dimension; ++i) {
-        forceDirection[i] = particle2->getPos()[i] - particle1->getPos()[i];
-    }
-
-    // Normalize the direction and scale by force magnitude
-    double length = std::sqrt(std::inner_product(forceDirection.begin(), forceDirection.end(), forceDirection.begin(), 0.0));
-    std::array<double, Dimension> force;
-    for (size_t i = 0; i < Dimension; ++i) {
-        force[i] = (forceDirection[i] / length) * forceMagnitude;
-    }
-
-    // Add the calculated force to the particles
-    particle1->addForce(force);
-    particle2->addForce(force);
 }
 
 
