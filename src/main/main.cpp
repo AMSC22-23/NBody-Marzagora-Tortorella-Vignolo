@@ -26,11 +26,12 @@ std::unique_ptr<QuadtreeNode<Dimension>> createQuadTree(std::vector<Particle<Dim
     double minY = minX;
     double maxY = maxX;
 
-    //std::cout<< dimSimulationArea<<"->"<< minX << ", " << maxX <<endl;
+    std::cout<< dimSimulationArea<<"->"<< minX << ", " << maxX <<endl;
+    std::cout<<"num particles"<< particles.size() <<endl;
 
     // Create the root of the tree
     double width = std::max(maxX - minX, maxY - minY);
-    std::unique_ptr<QuadtreeNode<Dimension>> root = std::make_unique<QuadtreeNode<Dimension>>(minX + width / 2, minY + width / 2, width);
+    std::unique_ptr<QuadtreeNode<Dimension>> root = std::make_unique<QuadtreeNode<Dimension>>(minX + width / 2, minY + width / 2, width, 20);
 
     // Insert each particle into the tree
     for (auto& particle : particles) {
@@ -441,11 +442,11 @@ void main2DSimulationBarnesHut(int forceType, int simType, double delta_t, int d
     
     time_t start, end;
     std::vector<Particle<Dimension>> particles; 
-    numParticles = 600;
+    numParticles = 20;
     
-    delta_t = 1;
+    delta_t = 0.1;
     iterationNumber = 1000;
-    dimSimulationArea = 4000;
+    dimSimulationArea = 1000;
     Force<Dimension>* f;
     if(forceType == 1 ) f = new CoulombForce<Dimension>();
     else f = new GravitationalForce<Dimension>();
@@ -481,16 +482,30 @@ void main2DSimulationBarnesHut(int forceType, int simType, double delta_t, int d
 
         // Calcolo delle forze per ogni particella
         for (size_t i = 0; i < numParticles; ++i) {
+
+
             //calculateNetForce(treeRoot, &particles[i], theta, *f);
             std::shared_ptr<Particle<Dimension>> p = std::make_shared<Particle<Dimension>>(particles[i]);
             //std::cout << "Particle " << &particles[i] << std::endl;
+
+            // manage collision
+            //if(p->hitsBoundary(dimSimulationArea)){
+            //    p->manageCollision(*p, dimSimulationArea);
+            //}
+            
             calculateNetForceQuadtree(quadtree, p, theta, *f);
             if(p != nullptr)
                 particles[i].addForce(p->getForce());
+                particles[i].setVel(p->getVel());
         }
 
         // Aggiornamento delle posizioni delle particelle
-        for (auto& particle : particles) {
+        for (auto& particle : particles) {  
+
+            if(particle.hitsBoundary(dimSimulationArea)){
+                particle.manageCollision(particle, dimSimulationArea);
+            }    
+
             particle.updateAndReset(delta_t);
         }
 
@@ -536,6 +551,7 @@ template <size_t Dimension>
 void calculateNetForceQuadtree(const std::unique_ptr<QuadtreeNode<Dimension>>& node, std::shared_ptr<Particle<Dimension>> p, double theta, Force<Dimension>& f) {
    
     double s, d;
+    double softening = 0.7;
     
     std::array<double, Dimension> force_qk;
     std::unique_ptr<Particle<Dimension>> approxParticle;
@@ -545,6 +561,11 @@ void calculateNetForceQuadtree(const std::unique_ptr<QuadtreeNode<Dimension>>& n
     }
     //std::cout << "is leaf: " << node->isLeaf() << std::endl;
     if(node->isLeaf() && node->getParticle() != nullptr && node->getParticle()->getId() != p->getId()){
+
+        if(node->getParticle()->squareDistance(*p) < (((node->getParticle()->getRadius() + p->getRadius())*(node->getParticle()->getRadius() + p->getRadius())))*softening){
+            node->getParticle()->manageCollision(*p, 0.0);
+        }
+
         //std::cout << "Node is a leaf and contains a different particle. Applying direct force." << std::endl;
         force_qk = f.calculateForce(*p, *node->getParticle());
         //std::cout << "force_qk: " << force_qk[0]<< " : " <<force_qk[1]<<std::endl;

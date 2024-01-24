@@ -99,10 +99,11 @@ class QuadtreeNode{
         }
 
         if(leaf && particle != nullptr){
-            if (depth >= maxDepth) {
-                // Gestisci la situazione, ad esempio ignorando l'inserimento o aggregando le particelle
-                return;
-            }
+            //if (depth >= maxDepth) {
+            //    //std::cout<<"MAXDEPTH"<<std::endl;
+            //    // Gestisci la situazione, ad esempio ignorando l'inserimento o aggregando le particelle
+            //    return;
+            //}
             split();
             int index = getQuadrantIndex(particle->getPos());
             if(index != -1) children[index]->insert(particle);
