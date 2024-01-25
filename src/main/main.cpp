@@ -42,6 +42,25 @@ std::unique_ptr<QuadtreeNode<Dimension>> createQuadTree(std::vector<Particle<Dim
     return root;
 }
 
+template<size_t Dimension>
+void assignRegions(double regionWidth, double dim, double x, double y, std::vector<std::array<double, Dimension>>* centers){
+    if(dim == regionWidth){
+        centers->push_back({x-regionWidth/2, y+regionWidth/2});
+        centers->push_back({x+regionWidth/2, y+regionWidth/2});
+        centers->push_back({x-regionWidth/2, y-regionWidth/2});
+        centers->push_back({x+regionWidth/2, y-regionWidth/2});
+
+    }
+    else{
+        assignRegions(regionWidth, dim/2, x-dim/2, y+dim/2, centers);
+        assignRegions(regionWidth, dim/2, x+dim/2, y+dim/2, centers);
+        assignRegions(regionWidth, dim/2, x-dim/2, y-dim/2, centers);
+        assignRegions(regionWidth, dim/2, x+dim/2, y-dim/2, centers);
+    }
+
+}
+
+
 
 template<size_t Dimension>
 std::vector<std::array<double, Dimension>> getSubRegionsCoordinates(int num_threads, double dim) {
@@ -56,13 +75,15 @@ std::vector<std::array<double, Dimension>> getSubRegionsCoordinates(int num_thre
     double regionWidth = dim / cols;
     double regionHeight = dim / rows;
 
-    for (int i = 0; i < rows; i++) {
+    /*for (int i = 0; i < rows; i++) {
         for (int j = 0; j < cols; j++) {
             double centerX = (j + 0.5) * regionWidth - dim / 2;
             double centerY = (i + 0.5) * regionHeight - dim / 2;
             regions.push_back({centerX, centerY});
         }
-    }
+    }*/
+    // funzione ricorsiva
+    assignRegions(regionWidth, dim/2, 0.0, 0.0,&regions);
 
     return regions;
 }
@@ -96,22 +117,24 @@ std::unique_ptr<QuadtreeNode<Dimension>> merging(std::vector<std::unique_ptr<Qua
     std::array<std::unique_ptr<QuadtreeNode<Dimension>>, 4> temp_roots;
     int num_threads = omp_get_max_threads();
 
-    while (size > 1) {
+    while (size >= 4) {
 
         if(size < num_threads){
             num_threads = size;
             omp_set_num_threads(num_threads);
         }
 
-        #pragma omp parallel for private(temp_roots) shared(k,y) schedule(static, size/num_threads)
-        for (int i = 0; i < size; i += k) {
+        //#pragma omp parallel for private(temp_roots) shared(k,y) schedule(static, size/num_threads)
+        for (int i = 0; i < size/4; i++) {
 
             for(int j = 0; j<4 ; j++){
-                temp_roots[j] = std::move((*roots)[k*i + j*y]);
+                int index = k*i + j*y;
+                swap(temp_roots[j],(*roots)[index]);
+
             }
 
-            (*roots).at(k*i) = std::move(mergeRoots(&temp_roots, subRegionsDimension));
-            
+            (*roots).at(k*i) = std::move(mergeRoots(&temp_roots, subRegionsDimension*(i+1)));
+
         }
 
         k = k*4;
@@ -131,10 +154,9 @@ template<size_t Dimension>
 std::unique_ptr<QuadtreeNode<Dimension>> mergeRoots(std::array<std::unique_ptr<QuadtreeNode<Dimension>>, 4>* roots, double subRegionsDimension){
     
 
-    double x = (*roots)[0]->getCenter()[0] + subRegionsDimension/2;
-    double y = (*roots)[0]->getCenter()[1] - subRegionsDimension/2;
+    double x,y;
 
-    std::unique_ptr<QuadtreeNode<Dimension>> intNode = std::make_unique<QuadtreeNode<Dimension>>(x, y, subRegionsDimension, 20);;
+    std::unique_ptr<QuadtreeNode<Dimension>> intNode;
 
     //particleId = (*roots)[j]->getChildren()[i]->getParticle()->getId();
 
@@ -144,6 +166,9 @@ std::unique_ptr<QuadtreeNode<Dimension>> mergeRoots(std::array<std::unique_ptr<Q
             if((*roots)[j]->getParticle() != nullptr){
                 std::cout<<"Leaf node. Num particles: 1"<<std::endl;
                 // il children del nodo intermedio dovrà puntare alla particella.
+                x = (*roots)[0]->getCenter()[0] + subRegionsDimension * 1.5;
+                y= (*roots)[0]->getCenter()[1] + subRegionsDimension * 1.5;
+                intNode = std::make_unique<QuadtreeNode<Dimension>>(x, y, subRegionsDimension, 20);
                 intNode->insert((*roots)[j]->getParticle());
             }else{
                 std::cout<<"Leaf node. Num particles: 0"<<std::endl;
@@ -153,7 +178,10 @@ std::unique_ptr<QuadtreeNode<Dimension>> mergeRoots(std::array<std::unique_ptr<Q
         else{
             std::cout<<"Not a leaf node, Num particles: "<<(*roots)[j]->getCount()<<std::endl; 
             // il children del nodo intermedio dovrà puntare al nodo stesso. 
-            // TODO: implementare il metodo che inserisce il nodo.   
+            // TODO: implementare il metodo che inserisce il nodo.
+            x = (*roots)[0]->getCenter()[0] + subRegionsDimension * 0.5;
+            y= (*roots)[0]->getCenter()[1] + subRegionsDimension * 0.5;
+            intNode = std::make_unique<QuadtreeNode<Dimension>>(x, y, subRegionsDimension, 20);
             intNode->insertNode(std::move((*roots)[j]));
             std::cout<<"insertNode done"<<std::endl; 
         }
@@ -419,7 +447,7 @@ void serialSimulation(int it, std::vector<Particle<Dimension>>* particles, int d
                     }
                     file << std::endl;
                 } else {
-                    std::cout << "Unable to open file";
+                    std::cout << "e to open file";
                 }
             }
         }
