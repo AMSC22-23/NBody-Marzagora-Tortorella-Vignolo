@@ -67,7 +67,6 @@ std::vector<std::array<double, Dimension>> getSubRegionsCoordinates(int num_thre
     return regions;
 }
 
-
 template<size_t Dimension>
 std::array<double, Dimension> getSubRegionsDimension(int num_threads, double dim) {
     std::array<double, Dimension> regionsDim;
@@ -86,6 +85,54 @@ std::array<double, Dimension> getSubRegionsDimension(int num_threads, double dim
     return regionsDim;
 }
 
+
+
+
+template<size_t Dimension>
+std::unique_ptr<QuadtreeNode<Dimension>> mergeRoots(std::vector<std::unique_ptr<QuadtreeNode<Dimension>>>* roots, double subRegionsDimension){
+    std::unique_ptr<QuadtreeNode<Dimension>> treeRoot;
+
+    int steps = log((*roots).size())/log(4);
+    //std::cout<<"steps: "<<steps<<std::endl;
+
+
+    // TODO: 
+    double center = 0.0;
+    std::unique_ptr<QuadtreeNode<Dimension>> intNode = std::make_unique<QuadtreeNode<Dimension>>(center, center, 2*subRegionsDimension, 20);
+    
+    //particleId = (*roots)[j]->getChildren()[i]->getParticle()->getId();
+
+    
+    int size =(*roots).size();
+
+    for(int j = 0; j<size; j++){
+
+        std::cout<<" \n --------------------------------- "<<std::endl;
+                    
+        if((*roots)[j]->isLeaf()){
+            if((*roots)[j]->getParticle() != nullptr){
+                std::cout<<"Leaf node. Num particles: 1"<<std::endl;
+                // il children del nodo intermedio dovrà puntare alla particella.
+                intNode->insert((*roots)[j]->getParticle());
+            }else{
+                std::cout<<"Leaf node. Num particles: 0"<<std::endl;
+                // il children del nodo intermedio dovrà puntare a nullptr. => quindi non dobbiamo fare nulla perchè quando creiamo un quadtreenode i children sono già a null (controllare)
+            }
+        } 
+        else{
+            std::cout<<"Not a leaf node, Num particles: "<<(*roots)[j]->getCount()<<std::endl; 
+            // il children del nodo intermedio dovrà puntare al nodo stesso. 
+            // TODO: implementare il metodo che inserisce il nodo.   
+            intNode->insertNode(std::move((*roots)[j]));
+            std::cout<<"insertNode done"<<std::endl; 
+        }
+    }
+
+    if(intNode != nullptr)
+        intNode->printTree();
+
+    return treeRoot;
+}
 
 template<size_t Dimension>
 int generateTreeParallel(std::vector<Particle<Dimension>>* particles, double dimSimulationArea){
@@ -119,6 +166,10 @@ int generateTreeParallel(std::vector<Particle<Dimension>>* particles, double dim
     for(int i = 0; i<num_quad; i++){
         roots[i]->printTree();
     }
+
+    std::unique_ptr<QuadtreeNode<Dimension>> treeRoot;
+    
+    treeRoot = mergeRoots(&roots, subRegionsDimension[0]);
 
     // merge
     std::cout<<"end generateTreeParallel"<<std::endl;

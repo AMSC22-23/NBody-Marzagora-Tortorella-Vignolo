@@ -55,6 +55,67 @@ class QuadtreeNode{
         return children;
     }
 
+    void insertNode(std::unique_ptr<QuadtreeNode<Dimension>> subTreeRoot, int depth = 0) {
+        std::cout<<"insertNode start"<<std::endl;
+        if (!subTreeRoot) {
+            cerr << "Errore: il nodo da inserire è nullo." << endl;
+            return;
+        }
+
+        if (leaf) {
+            std::cout<<"il nodo di intNode è una foglia"<<std::endl;
+            // Se il nodo corrente è una foglia, lo trasformiamo in un nodo interno e inseriamo il sottoalbero
+            split();
+            std::cout<<"end split"<<std::endl;
+            leaf = false;
+        }
+
+        // Trova il quadrante in cui inserire il sottoalbero
+        int index = getQuadrantIndex(subTreeRoot->getCenter());
+        std::cout<<"index: "<<index<<std::endl;
+        if (index == -1) {
+            cerr << "Errore: indice del quadrante non valido per il nodo da inserire." << endl;
+            return;
+        }
+
+        if (!children[index]) {
+            // Se il nodo figlio non esiste, lo inizializziamo con il sottoalbero
+            children[index] = std::move(subTreeRoot);
+        } else {
+            // Altrimenti, inseriamo il sottoalbero nel nodo figlio esistente
+            children[index]->insertNode(std::move(subTreeRoot), depth + 1);
+            if(depth >5)
+                return;
+        }
+
+        // Aggiorna gli attributi del nodo corrente in base al sottoalbero inserito
+        //updateAttributesAfterNodeInsert(subTreeRoot);
+    }
+
+    void updateAttributesForSubtree(const QuadtreeNode<Dimension>* subtreeRoot) {
+        if (!subtreeRoot) return;
+
+        // Calcola la massa totale e il centro di massa del sottoalbero
+        double subtreeMass = subtreeRoot->getTotalMass();
+        const auto& subtreeCenter = subtreeRoot->getTotalCenter();
+
+        // Aggiorna la massa totale del nodo corrente
+        double oldTotalMass = totalMass;
+        totalMass += subtreeMass;
+
+        // Aggiorna il centro di massa del nodo corrente
+        for (size_t i = 0; i < Dimension; ++i) {
+            double sumWeights = totalCenter[i] * oldTotalMass;
+            sumWeights += subtreeCenter[i] * subtreeMass;
+            totalCenter[i] = sumWeights / totalMass;
+        }
+
+        // Incrementa il conteggio delle particelle
+        count += subtreeRoot->getCount();
+    }
+
+
+
     void split(){
         
         leaf = false;
