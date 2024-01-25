@@ -94,7 +94,7 @@ std::unique_ptr<QuadtreeNode<Dimension>> merging(std::vector<std::unique_ptr<Qua
     int k = 4;
     int y = 1;
     std::array<std::unique_ptr<QuadtreeNode<Dimension>>, 4> temp_roots;
-    int num_threads = omp_get_num_threads();
+    int num_threads = omp_get_max_threads();
 
     while (size > 1) {
 
@@ -167,11 +167,15 @@ std::unique_ptr<QuadtreeNode<Dimension>> mergeRoots(std::array<std::unique_ptr<Q
 
 template<size_t Dimension>
 int generateTreeParallel(std::vector<Particle<Dimension>>* particles, double dimSimulationArea){
+
     std::cout<<"start generateTreeParallel"<<std::endl;
 
-    int num_threads = 4; // Example value
+    int num_threads = omp_get_max_threads(); // Example value
 
+    std::cout<<"num_threads "<<num_threads<<std::endl;
     int num_quad = pow(4, ceil(log(num_threads)/log(4)));
+
+    std::cout<<"num_quad "<<num_quad<<std::endl;
 
     std::vector<std::array<double, 2>> regions = getSubRegionsCoordinates<Dimension>(num_quad, dimSimulationArea);
     std::array<double, 2> subRegionsDimension = getSubRegionsDimension<Dimension>(num_quad, dimSimulationArea);
@@ -185,18 +189,18 @@ int generateTreeParallel(std::vector<Particle<Dimension>>* particles, double dim
 
     std::vector<std::unique_ptr<QuadtreeNode<Dimension>>> roots;
     std::unique_ptr<QuadtreeNode<Dimension>> roots_;
-    //roots.reserve(num_quad);
+    roots.reserve(num_quad);
 
     //#pragma omp parallel for shared(particles, regions)
     for(int i = 0; i<num_quad; i++){
+        roots.push_back(nullptr);
         std::cout<<i<<std::endl;
-        roots[i] = createQuadTreeParallel(*particles, regions[i], subRegionsDimension[0], dimSimulationArea);
-        std::cout<<"end"<<std::endl;
+        (roots).at(i) = std::move(createQuadTreeParallel(*particles, regions[i], subRegionsDimension[0], dimSimulationArea));
+        //std::cout<<num_quad<std::endl;
     }
-
-
     
     for(int i = 0; i<num_quad; i++){
+        std::cout<<"------------printTree------------"<<std::endl;
         roots[i]->printTree();
     }
 
@@ -267,6 +271,7 @@ std::unique_ptr<QuadtreeNode<Dimension>> createQuadTreeParallel(std::vector<Part
             }
         }
     }
+
     std::cout<<"end  ------------"<<std::endl;
     return root;
 }
