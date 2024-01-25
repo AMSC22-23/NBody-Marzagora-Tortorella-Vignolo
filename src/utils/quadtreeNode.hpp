@@ -56,7 +56,11 @@ class QuadtreeNode{
     }
 
     void insertNode(std::unique_ptr<QuadtreeNode<Dimension>> subTreeRoot, int depth = 0) {
-        std::cout<<"insertNode start"<<std::endl;
+
+        updateAttributes(this->createApproximateParticle(), subTreeRoot->getCount());
+        std::cout<<"createApproximateParticle: "<<this->createApproximateParticle()->getProperty()<<std::endl;
+
+        std::cout<<"insertNode start, inserting subtree: "<<std::endl;
         if (!subTreeRoot) {
             cerr << "Errore: il nodo da inserire è nullo." << endl;
             return;
@@ -78,15 +82,14 @@ class QuadtreeNode{
             return;
         }
 
-        if (!children[index]) {
+        if (!children[index]->getParticle()) {
             // Se il nodo figlio non esiste, lo inizializziamo con il sottoalbero
             children[index] = std::move(subTreeRoot);
         } else {
             // Altrimenti, inseriamo il sottoalbero nel nodo figlio esistente
             children[index]->insertNode(std::move(subTreeRoot), depth + 1);
-            if(depth >5)
-                return;
         }
+
 
         // Aggiorna gli attributi del nodo corrente in base al sottoalbero inserito
         //updateAttributesAfterNodeInsert(subTreeRoot);
@@ -187,10 +190,12 @@ class QuadtreeNode{
         }
     }
 
-    void updateAttributes(std::shared_ptr<Particle<Dimension>> newParticle){
+    void updateAttributes(std::shared_ptr<Particle<Dimension>> newParticle, int numParticles = 1){
+      
+        //std::cout<<"updateAttributes, particle: "<<newParticle->getProperty()<<std::endl;
         double oldTotalMass = totalMass;
         totalMass += newParticle->getProperty(); // Property of particle: mass for gravitational force, charge for Coulomb force.
-        count++;
+        count += numParticles;
         for(size_t i = 0; i < Dimension; ++i) {
             double sumWeights = totalCenter[i] * oldTotalMass;
             sumWeights += newParticle->getPos()[i] * newParticle->getProperty();

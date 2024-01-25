@@ -162,6 +162,8 @@ int generateTreeParallel(std::vector<Particle<Dimension>>* particles, double dim
         roots.push_back(createQuadTreeParallel(*particles, regions[i], subRegionsDimension[0], dimSimulationArea));
         std::cout<<"end"<<std::endl;
     }
+
+
     
     for(int i = 0; i<num_quad; i++){
         roots[i]->printTree();
