@@ -57,8 +57,8 @@ class QuadtreeNode{
 
     void insertNode(std::unique_ptr<QuadtreeNode<Dimension>> subTreeRoot, int depth = 0) {
 
-        updateAttributes(this->createApproximateParticle(), subTreeRoot->getCount());
-        std::cout<<"createApproximateParticle: "<<this->createApproximateParticle()->getProperty()<<std::endl;
+        updateAttributes(subTreeRoot->createApproximateParticle(), subTreeRoot->getCount());
+        std::cout<<"createApproximateParticle: "<<subTreeRoot->createApproximateParticle()->getProperty()<<std::endl;
 
         std::cout<<"insertNode start, inserting subtree: "<<std::endl;
         if (!subTreeRoot) {
@@ -94,30 +94,6 @@ class QuadtreeNode{
         // Aggiorna gli attributi del nodo corrente in base al sottoalbero inserito
         //updateAttributesAfterNodeInsert(subTreeRoot);
     }
-
-    void updateAttributesForSubtree(const QuadtreeNode<Dimension>* subtreeRoot) {
-        if (!subtreeRoot) return;
-
-        // Calcola la massa totale e il centro di massa del sottoalbero
-        double subtreeMass = subtreeRoot->getTotalMass();
-        const auto& subtreeCenter = subtreeRoot->getTotalCenter();
-
-        // Aggiorna la massa totale del nodo corrente
-        double oldTotalMass = totalMass;
-        totalMass += subtreeMass;
-
-        // Aggiorna il centro di massa del nodo corrente
-        for (size_t i = 0; i < Dimension; ++i) {
-            double sumWeights = totalCenter[i] * oldTotalMass;
-            sumWeights += subtreeCenter[i] * subtreeMass;
-            totalCenter[i] = sumWeights / totalMass;
-        }
-
-        // Incrementa il conteggio delle particelle
-        count += subtreeRoot->getCount();
-    }
-
-
 
     void split(){
         

@@ -87,28 +87,59 @@ std::array<double, Dimension> getSubRegionsDimension(int num_threads, double dim
 
 
 
+template<size_t Dimension>
+std::unique_ptr<QuadtreeNode<Dimension>> merging(std::vector<std::unique_ptr<QuadtreeNode<Dimension>>>* roots, double subRegionsDimension){
+    
+    int size = (*roots).size(); // 4^n elements
+    int k = 4;
+    int y = 1;
+    std::array<std::unique_ptr<QuadtreeNode<Dimension>>, 4> temp_roots;
+    int num_threads = omp_get_num_threads();
+
+    while (size > 1) {
+
+        if(size < num_threads){
+            num_threads = size;
+            omp_set_num_threads(num_threads);
+        }
+
+        #pragma omp parallel for private(temp_roots) shared(k,y) schedule(static, size/num_threads)
+        for (int i = 0; i < size; i += k) {
+
+            for(int j = 0; j<4 ; j++){
+                temp_roots[j] = std::move((*roots)[k*i + j*y]);
+            }
+
+            (*roots).at(k*i) = std::move(mergeRoots(&temp_roots, subRegionsDimension));
+            
+        }
+
+        k = k*4;
+        y = y*4;
+
+        size /= 4; // Reduce the size of the vector by a factor of 4
+    }
+    
+    if((*roots)[0] != nullptr)
+        (*roots)[0]->printTree();
+
+    return std::move((*roots)[0]);
+}
+
 
 template<size_t Dimension>
-std::unique_ptr<QuadtreeNode<Dimension>> mergeRoots(std::vector<std::unique_ptr<QuadtreeNode<Dimension>>>* roots, double subRegionsDimension){
-    std::unique_ptr<QuadtreeNode<Dimension>> treeRoot;
-
-    int steps = log((*roots).size())/log(4);
-    //std::cout<<"steps: "<<steps<<std::endl;
-
-
-    // TODO: 
-    double center = 0.0;
-    std::unique_ptr<QuadtreeNode<Dimension>> intNode = std::make_unique<QuadtreeNode<Dimension>>(center, center, 2*subRegionsDimension, 20);
+std::unique_ptr<QuadtreeNode<Dimension>> mergeRoots(std::array<std::unique_ptr<QuadtreeNode<Dimension>>, 4>* roots, double subRegionsDimension){
     
+
+    double x = (*roots)[0]->getCenter()[0] + subRegionsDimension/2;
+    double y = (*roots)[0]->getCenter()[1] - subRegionsDimension/2;
+
+    std::unique_ptr<QuadtreeNode<Dimension>> intNode = std::make_unique<QuadtreeNode<Dimension>>(x, y, subRegionsDimension, 20);;
+
     //particleId = (*roots)[j]->getChildren()[i]->getParticle()->getId();
 
-    
-    int size =(*roots).size();
-
-    for(int j = 0; j<size; j++){
-
+    for(int j = 0; j<4; j++){
         std::cout<<" \n --------------------------------- "<<std::endl;
-                    
         if((*roots)[j]->isLeaf()){
             if((*roots)[j]->getParticle() != nullptr){
                 std::cout<<"Leaf node. Num particles: 1"<<std::endl;
@@ -128,10 +159,10 @@ std::unique_ptr<QuadtreeNode<Dimension>> mergeRoots(std::vector<std::unique_ptr<
         }
     }
 
-    if(intNode != nullptr)
-        intNode->printTree();
+    //if(intNode != nullptr)
+    //    intNode->printTree();
 
-    return treeRoot;
+    return intNode;
 }
 
 template<size_t Dimension>
@@ -159,7 +190,7 @@ int generateTreeParallel(std::vector<Particle<Dimension>>* particles, double dim
     //#pragma omp parallel for shared(particles, regions)
     for(int i = 0; i<num_quad; i++){
         std::cout<<i<<std::endl;
-        roots.push_back(createQuadTreeParallel(*particles, regions[i], subRegionsDimension[0], dimSimulationArea));
+        roots[i] = createQuadTreeParallel(*particles, regions[i], subRegionsDimension[0], dimSimulationArea);
         std::cout<<"end"<<std::endl;
     }
 
@@ -171,7 +202,7 @@ int generateTreeParallel(std::vector<Particle<Dimension>>* particles, double dim
 
     std::unique_ptr<QuadtreeNode<Dimension>> treeRoot;
     
-    treeRoot = mergeRoots(&roots, subRegionsDimension[0]);
+    treeRoot = merging(&roots, subRegionsDimension[0]);
 
     // merge
     std::cout<<"end generateTreeParallel"<<std::endl;
