@@ -66,7 +66,7 @@ class GravitationalForce : public Force<Dimension>{
             return force_qk; 
         }
     private:
-        double const G = 10000;
+        double const G = 100;
 };
 
 /**

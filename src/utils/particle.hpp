@@ -26,7 +26,9 @@ class Particle {
         * @param type Type of the particle: 0 for gravitational, 1 for Coulomb 
         * */
         Particle(int id, double p, std::array<double, Dimension> pos, std::array<double, Dimension> v, double radius, bool type)
-            : id(id), property(p), pos{pos}, vel{v}, force{}, type(type), radius(radius) {}
+            : id(id), property(p), pos{pos}, vel{v}, force{}, type(type), radius(radius) {
+                for(size_t j = 0; j < Dimension; ++j) accel[j] = 0.0;
+            }
 
         /**
          * @brief Setter method for velocity of the particle
@@ -51,6 +53,10 @@ class Particle {
         */
         double getProperty() const {
             return property;
+        }
+
+        std::array<double, Dimension> getAccel() const {
+            return accel;
         }
 
         /**
@@ -141,11 +147,23 @@ class Particle {
          * @param delta_t Time step after which the state of the particle is being updated
          * 
         */
-        void update(const double delta_t) {;
+        void update(const double delta_t) {
+            for(size_t i = 0; i < Dimension; ++i) 
+            {
+                pos[i] += vel[i] * delta_t;
+                vel[i] += (force[i] / ((property<0)? -property:property)) * delta_t;
+            }
+        }
 
-            for(size_t i = 0; i < Dimension; ++i) pos[i] += vel[i] * delta_t;
-            for(size_t i = 0; i < Dimension; ++i) vel[i] += (force[i] / ((property<0)? -property:property)) * delta_t;
-            
+        void velocityVerletUpdate(const double delta_t) {
+            std::array<double, Dimension> prevAccel;
+            for(size_t i=0; i<Dimension; ++i)
+            {
+                prevAccel[i] = accel[i];
+                accel[i] = (force[i] / ((property<0)? -property:property));
+                pos[i] += vel[i] * delta_t + 0.5 * prevAccel[i] * delta_t * delta_t;
+                vel[i] += 0.5 * (prevAccel[i] + accel[i]) * delta_t;
+            } 
         }
 
         /**
@@ -247,6 +265,7 @@ class Particle {
         std::array<double, Dimension> pos;
         std::array<double, Dimension> vel;
         std::array<double, Dimension> force;
+        std::array<double, Dimension> accel;
         bool type;
         double radius;
 };
