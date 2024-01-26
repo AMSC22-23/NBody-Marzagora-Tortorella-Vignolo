@@ -114,8 +114,16 @@ std::unique_ptr<QuadtreeNode<Dimension>> merging(std::vector<std::unique_ptr<Qua
     int size = (*roots).size(); // 4^n elements
     int k = 4;
     int y = 1;
+
+
+
     std::array<std::unique_ptr<QuadtreeNode<Dimension>>, 4> temp_roots;
     int num_threads = omp_get_max_threads();
+    
+    double x = 0.0;
+    double z = 0.0;
+
+    int l = 0;
 
     while (size >= 4) {
 
@@ -133,13 +141,15 @@ std::unique_ptr<QuadtreeNode<Dimension>> merging(std::vector<std::unique_ptr<Qua
 
             }
 
-            (*roots).at(k*i) = std::move(mergeRoots(&temp_roots, subRegionsDimension*(i+1)));
+            std::cout<<"subRegionsDimension : "<<subRegionsDimension*(l+1)<<std::endl;
+
+            (*roots).at(k*i) = std::move(mergeRoots(&temp_roots, subRegionsDimension*(l+1)));
 
         }
 
         k = k*4;
         y = y*4;
-
+        l++;
         size /= 4; // Reduce the size of the vector by a factor of 4
     }
     
@@ -153,35 +163,40 @@ std::unique_ptr<QuadtreeNode<Dimension>> merging(std::vector<std::unique_ptr<Qua
 template<size_t Dimension>
 std::unique_ptr<QuadtreeNode<Dimension>> mergeRoots(std::array<std::unique_ptr<QuadtreeNode<Dimension>>, 4>* roots, double subRegionsDimension){
     
-
     double x,y;
 
     std::unique_ptr<QuadtreeNode<Dimension>> intNode;
+    double totx = 0.0;
+    double toty = 0.0;
 
-    //particleId = (*roots)[j]->getChildren()[i]->getParticle()->getId();
+    std::cout<<"............................"<<std::endl;
+    for(int i=0;i<4;i++){
+        totx += (*roots)[i]->getCenter()[0];
+        toty += (*roots)[i]->getCenter()[1];
+         std::cout<<"totx "<<totx<<std::endl;
+    }
+    std::cout<<"............................"<<std::endl;
+
+    x = totx/4.0;
+    y = toty/4.0;
+
+    intNode = std::make_unique<QuadtreeNode<Dimension>>(x, y, 2*subRegionsDimension, 20);
+
+    std::cout<<"\n x = "<<x<<std::endl;
+    std::cout<<" y = "<<y<<std::endl;
 
     for(int j = 0; j<4; j++){
         std::cout<<" \n --------------------------------- "<<std::endl;
         if((*roots)[j]->isLeaf()){
             if((*roots)[j]->getParticle() != nullptr){
                 std::cout<<"Leaf node. Num particles: 1"<<std::endl;
-                // il children del nodo intermedio dovrà puntare alla particella.
-                x = (*roots)[0]->getCenter()[0] + subRegionsDimension * 1.5;
-                y= (*roots)[0]->getCenter()[1] + subRegionsDimension * 1.5;
-                intNode = std::make_unique<QuadtreeNode<Dimension>>(x, y, subRegionsDimension, 20);
                 intNode->insert((*roots)[j]->getParticle());
             }else{
                 std::cout<<"Leaf node. Num particles: 0"<<std::endl;
-                // il children del nodo intermedio dovrà puntare a nullptr. => quindi non dobbiamo fare nulla perchè quando creiamo un quadtreenode i children sono già a null (controllare)
             }
         } 
         else{
             std::cout<<"Not a leaf node, Num particles: "<<(*roots)[j]->getCount()<<std::endl; 
-            // il children del nodo intermedio dovrà puntare al nodo stesso. 
-            // TODO: implementare il metodo che inserisce il nodo.
-            x = (*roots)[0]->getCenter()[0] + subRegionsDimension * 0.5;
-            y= (*roots)[0]->getCenter()[1] + subRegionsDimension * 0.5;
-            intNode = std::make_unique<QuadtreeNode<Dimension>>(x, y, subRegionsDimension, 20);
             intNode->insertNode(std::move((*roots)[j]));
             std::cout<<"insertNode done"<<std::endl; 
         }
