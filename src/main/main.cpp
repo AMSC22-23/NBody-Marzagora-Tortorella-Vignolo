@@ -132,7 +132,7 @@ std::unique_ptr<QuadtreeNode<Dimension>> merging(std::vector<std::unique_ptr<Qua
             omp_set_num_threads(num_threads);
         }
 
-        //#pragma omp parallel for private(temp_roots) shared(k,y) schedule(static, size/num_threads)
+        #pragma omp parallel for private(temp_roots) shared(k,y) schedule(static, size/num_threads)
         for (int i = 0; i < size/4; i++) {
 
             for(int j = 0; j<4 ; j++){
@@ -233,10 +233,13 @@ int generateTreeParallel(std::vector<Particle<Dimension>>* particles, double dim
     std::vector<std::unique_ptr<QuadtreeNode<Dimension>>> roots;
     std::unique_ptr<QuadtreeNode<Dimension>> roots_;
     roots.reserve(num_quad);
-
-    //#pragma omp parallel for shared(particles, regions)
-    for(int i = 0; i<num_quad; i++){
+    for(int i = 0; i<num_quad; i++) {
         roots.push_back(nullptr);
+    }
+
+    #pragma omp parallel for shared(particles, regions)
+    for(int i = 0; i<num_quad; i++){
+        //roots.push_back(nullptr);
         std::cout<<i<<std::endl;
         (roots).at(i) = std::move(createQuadTreeParallel(*particles, regions[i], subRegionsDimension[0], dimSimulationArea));
         //std::cout<<num_quad<std::endl;
