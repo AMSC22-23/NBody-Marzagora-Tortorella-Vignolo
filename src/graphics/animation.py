@@ -40,7 +40,7 @@ else:
 interval_millisec = 20;  # [milliseconds], duration of the frame
 
 # Open the file for reading
-with open('coordinates.txt', 'r') as f:
+with open('Info.txt', 'r') as f:
 
     # Read the number of the particles to simulate
     num_particles = int(next(f).strip())
@@ -54,29 +54,50 @@ with open('coordinates.txt', 'r') as f:
     # Read frames
     frames = int(next(f).strip())
 
+    # Read the number of files
+    num_files = int(next(f).strip())
+
     # Read the radius values from the next num_particles lines of the file
     radius = [float(next(f).strip()) for _ in range(num_particles)]
 
-    # Initialize the vectors of vectors to store the coordinates of the particles
-    x = [[] for _ in range(num_particles)]
-    y = [[] for _ in range(num_particles)]
-    z = [[] for _ in range(num_particles)]
+    f.close()
 
+# Initialize the vectors of vectors to store the coordinates of the particles
+x = [[] for _ in range(num_particles)]
+y = [[] for _ in range(num_particles)]
+z = [[] for _ in range(num_particles)]
+
+# Create a list of file names to open in this 
+file_names = ['Coordinates_' + str(i) + '.txt' for i in range(num_files)]
+# Create an empty list to store file objects
+file_objs = []
+
+# Loop through the list of file names to open each file and append the file object to the file_objs list
+for file_name in file_names:
+    file_obj = open(file_name, 'r')
+    file_objs.append(file_obj)
+
+for i in range (num_files): 
     # Read the remaining lines of the file to get the particle coordinates
     if(dimension == 2):
-        for line in f:
+        for line in file_objs[i]:
             # Split the line into id, x, and y
             id, x_val, y_val = map(float, line.strip().split(','))
             x[int(id)].append(x_val)
             y[int(id)].append(y_val)
     else:
-        for line in f:
-
+        for line in file_objs[i]:
             # Split the line into id, x, y, anx z
             id, x_val, y_val, z_val = map(float, line.strip().split(','))
             x[int(id)].append(x_val)
             y[int(id)].append(y_val)
             z[int(id)].append(z_val)
+
+#print(x)
+
+# Close all the file objects
+for file_obj in file_objs:
+    file_obj.close()
 
 if(dimension == 2):
     print("2D animation")

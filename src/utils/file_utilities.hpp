@@ -2,8 +2,7 @@
 #include <fstream>
 #include <iostream>
 #include <random>
-#include "particle.hpp" 
-
+#include "particle.hpp"
 
 /**
  * @brief Template function that writes on file the total number of particles
@@ -22,47 +21,54 @@
  **/
 
 template <size_t Dimension>
-void printInitialStateOnFile(std::vector<Particle<Dimension>>* particles, int dim, std::string fileName,
-                             std::ofstream& file, int it, int speedUp) {
-    if (file.is_open()) {
+void printInitialStateOnFile(std::vector<Particle<Dimension>> *particles, int dim, std::string fileName, int it, int speedUp, size_t numFilesAndThreads)
+{
+    std::ofstream file(fileName);
+    if (file.is_open())
+    {
         file << (*particles).size() << std::endl;
         file << dim << std::endl;
         file << Dimension << std::endl;
         file << it / speedUp << std::endl;
+        file << numFilesAndThreads << std::endl;
 
-        for (const Particle<Dimension>& p : (*particles)) file << p.getRadius() << std::endl;
-        for (const Particle<Dimension>& p : (*particles)) {
+        for (const Particle<Dimension> &p : (*particles))
+            file << p.getRadius() << std::endl;
+        for (const Particle<Dimension> &p : (*particles))
+        {
             file << p.getId() << ",";
-            const auto& pos = p.getPos();
-            for (size_t i = 0; i < Dimension; ++i) {
+            const auto &pos = p.getPos();
+            for (size_t i = 0; i < Dimension; ++i)
+            {
                 file << pos[i];
-                if (i < Dimension - 1) file << ",";
+                if (i < Dimension - 1)
+                    file << ",";
             }
             file << std::endl;
         }
-    } else {
-        std::cout << "Unable to open file in printInitialStateOnFile";
     }
+    else
+    {
+        std::cout << "Unable to open file";
+    }
+    file.close();
 }
 
 // file utilities
 
 template <size_t Dimension>
-void writeParticlePositionsToFile(const std::vector<Particle<Dimension>>& particles, std::ofstream& file) {
-    for (const auto& q : particles) {
-        if (file.is_open()) {
-            file << q.getId() << ",";
-            const auto& pos = q.getPos();
-            for (size_t i = 0; i < Dimension; ++i) {
-                file << pos[i];
-                if (i < Dimension - 1) {
-                    file << ",";
-                }
+void writeParticlePositionsToFile(const std::vector<Particle<Dimension>> &particles, FILE* file)
+{
+    for (const auto &q : particles)
+    {
+        fprintf(file, "%d,", q.getId());
+        const auto& pos = q.getPos();
+        for (size_t i = 0; i < Dimension; ++i) {
+            fprintf(file, "%f", pos[i]);
+            if (i < Dimension - 1) {
+                fprintf(file, ",");
             }
-            file << std::endl;
-        } else {
-            std::cout << "Unable to open file";
-            break; 
         }
+        fprintf(file, "\n");
     }
 }
