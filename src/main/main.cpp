@@ -14,11 +14,21 @@
 #include "particle.hpp"
 #include "quadtreeNode.hpp"
 
-#include "file_utilities.hpp"
-#include "simulation_utilities.hpp"
-#include "tree_utilities.hpp"
+#include "fileUtilities.hpp"
+#include "simulationUtilities.hpp"
+#include "treeUtilities.hpp"
 
-
+/**
+ * @brief Parallel merge a vector of QuadtreeNode roots into a single QuadtreeNode.
+ * Based on the number of subtrees, the function merges four subtrees at a time in a single one;
+ * recursively, it merges the obtained subtrees until it reaches the root of the tree, which is then returned.
+ *
+ * @tparam Dimension Number of dimensions of the simulation
+ * @param roots Reference to the vector of subtrees that need to be merged into a single tree
+ * @param subRegionsDimension Dimension of the subregions in which the simulation area is divided
+ * @param num_threads Number of threads that are used for the parallelization
+ * @return Unique pointer to the root of the merged tree
+ **/
 template <size_t Dimension>
 std::unique_ptr<QuadtreeNode<Dimension>> merging(std::vector<std::unique_ptr<QuadtreeNode<Dimension>>>* roots,
                                                  double subRegionsDimension, int num_threads) {
@@ -57,6 +67,17 @@ std::unique_ptr<QuadtreeNode<Dimension>> merging(std::vector<std::unique_ptr<Qua
     return std::move((*roots)[0]);
 }
 
+/**
+ * @brief Function that creates the root of the main quadtree and then starts working on merging the subtrees: 
+ * if the root is a leaf, it checks if it contains a particle: if so, it means that that subtree contains only a particle, 
+ * so it uses the normal insert of Quadtree class to inserts it into the tree; otherwise, the subtree has more than one particle,
+ * so the root must be inserted as a child node, so it calls the function insertNode to take care of it.
+ * 
+ * @tparam Dimension Number of dimension of the simulation
+ * @param particles Reference to a vector of unique pointers to the roots of the subtrees
+ * @param subRegionsDimension Dimension of the subregions in which the simulation area is divided
+ * @return Unique pointer to the root of the merged tree
+ * **/
 template <size_t Dimension>
 std::unique_ptr<QuadtreeNode<Dimension>> mergeRoots(std::array<std::unique_ptr<QuadtreeNode<Dimension>>, 4>* roots,
                                                     double subRegionsDimension) {
@@ -92,6 +113,16 @@ std::unique_ptr<QuadtreeNode<Dimension>> mergeRoots(std::array<std::unique_ptr<Q
     return intNode;
 }
 
+/**
+ * @brief Parallel function that divides the simulation area into subregions to be assigned to each thread, in order for the 
+ * function CreateQuadTreeParallel to start creating the subtrees; then it merges them in a signle tree calling function 
+ * merging and returns the root of it.
+ * 
+ * @tparam Dimension Number of dimensions of the simulation
+ * @param particles Reference to the vector of particles in the simulation 
+ * @param dimSimulationArea Dimension of the simulation area
+ * 
+*/
 template <size_t Dimension>
 std::unique_ptr<QuadtreeNode<Dimension>> generateTreeParallel(std::vector<Particle<Dimension>>* particles,
                                                               double dimSimulationArea, int num_threads) {
@@ -122,6 +153,18 @@ std::unique_ptr<QuadtreeNode<Dimension>> generateTreeParallel(std::vector<Partic
     return treeRoot;
 }
 
+/**
+ * @brief Parallel function that determines the simulation boundaries, creates the root of the tree and then inserts each particle into the tree.
+ * It checks if the particle is inside the boundaries of the simulation area (standard case) and, if so, inserts it into the tree. 
+ * It also handles the case in which the particle is on the boundary of the simulation area.
+ * 
+ * @tparam Dimension Number of dimensions of the simulation
+ * @param particles Reference to the vector of particles in the simulation
+ * @param center Center of the simulation area
+ * @param width Width of the simulation area
+ * @param dimSimulationArea Dimension of the simulation area 
+ * @return Unique pointer to the root of the tree
+*/
 template <size_t Dimension>
 std::unique_ptr<QuadtreeNode<Dimension>> createQuadTreeParallel(std::vector<Particle<Dimension>>& particles,
                                                                 std::array<double, Dimension> center, double width,
@@ -130,17 +173,14 @@ std::unique_ptr<QuadtreeNode<Dimension>> createQuadTreeParallel(std::vector<Part
         return nullptr;
     }
 
-    // Determine the simulation boundaries (this might need to be adjusted)
     double minX = center[0] - width * 0.5;
     double maxX = center[0] + width * 0.5;
     double minY = center[1] - width * 0.5;
     double maxY = center[1] + width * 0.5;
 
-    // Create the root of the tree
     std::unique_ptr<QuadtreeNode<Dimension>> root =
         std::make_unique<QuadtreeNode<Dimension>>(center[0], center[1], width, 20);
 
-    // Insert each particle into the tree
     if (maxX == dimSimulationArea / 2 && minY == -dimSimulationArea / 2) {
         for (auto& particle : particles) {
             if (particle.getPos()[0] >= minX && particle.getPos()[0] <= maxX && particle.getPos()[1] <= maxY &&
@@ -180,16 +220,17 @@ std::unique_ptr<QuadtreeNode<Dimension>> createQuadTreeParallel(std::vector<Part
     return root;
 }
 
-/*
-To calculate the net force acting on body b, use the following recursive
-procedure, starting with the root of the quad-tree:
-
-1)If the current node is an external node (and it is not body b), calculate the
-force exerted by the current node on b, and add this amount to b’s net force.
-2)Otherwise, calculate the ratio s/d. If s/d < θ, treat this internal node as a
-single body, and calculate the force it exerts on body b, and add this amount to
-b’s net force. 3)Otherwise, run the procedure recursively on each of the current
-node’s children.
+/**
+ * @brief Function that calculates the net force acting on a particle; starting from the root of the quadtree, the function follows this procedure:
+ * if the current node is an external node (and it is not body p), calculate theforce exerted by the current node on p, and add this amount to b’s 
+ * net force. Otherwise, calculate the ratio s/d. If s/d < θ, treat this internal node as a single body, and calculate the force it exerts on body 
+ * p, and add this amount to p’s net force. Finally, it run the procedure recursively on each of the current node’s children.
+ * 
+ * @tparam Dimension Number of dimensions of the simulation
+ * @param node Reference to the root of the quadtree
+ * @param p Reference to the particle on which the net force is calculated
+ * @param theta Parameter that determines the accuracy of the approximation
+ * @param f Reference to the Force object responsible for calculating particle interactions.
 */
 template <size_t Dimension>
 void calculateNetForceQuadtree(const std::unique_ptr<QuadtreeNode<Dimension>>& node,
@@ -235,6 +276,15 @@ void calculateNetForceQuadtree(const std::unique_ptr<QuadtreeNode<Dimension>>& n
     }
 }
 
+/**
+ * @brief Function that computes the ratio between the width of the simulation area and the distance between the particle and the center of mass.
+ * 
+ * @tparam Dimension Number of dimensions of the simulation
+ * @param pos Position of the particle
+ * @param centerMass Center of mass
+ * @param width Width of the simulation area
+ * @return Ratio between the width of the simulation area and the distance between the particle and the center of mass
+*/
 template <size_t Dimension>
 double computeRatio(const std::array<double, Dimension>& pos, const std::array<double, Dimension>& centerMass,
                     double width) {
@@ -249,8 +299,19 @@ double computeRatio(const std::array<double, Dimension>& pos, const std::array<d
 
 
 /**
- serialBarnesHut
- **/
+ * @brief Serial implementation of the Barnes-Hut algorithm: it creates the quadtree, calculates the forces acting on each particle and then updates 
+ * their positions using the Verlet approximations. Finally writes the updated positions of the particles on the file after delta_t time and resets
+ * the quadtree in order for it to be created again at the following iteration with the updated positions.
+ * 
+ * @tparam Dimension Number of dimensions of the simulation
+ * @param iterationNumber Number of iterations
+ * @param particles Reference to the vector of particles in the simulation
+ * @param dimSimulationArea Dimension of the simulation area
+ * @param softening Overhead to avoid particles overlapping and fusing together
+ * @param delta_t Time step after which the simulation is updated
+ * @param f Reference to the Force object responsible for calculating particle interactions.
+ * @param speedUp Speedup factor
+*/
 template <size_t Dimension>
 void serialBarnesHut(int iterationNumber, std::vector<Particle<Dimension>>* particles, int dimSimulationArea,
                      double softening, double delta_t, Force<Dimension>& f,int speedUp) {
@@ -268,12 +329,9 @@ void serialBarnesHut(int iterationNumber, std::vector<Particle<Dimension>>* part
         exit(1);
     }
 
-    // Inizio dell'algoritmo di Barnes-Hut
-
     for (int iter = 0; iter < iterationNumber; ++iter) {
         quadtree = createQuadTree(*particles, 2 * dimSimulationArea);
 
-        // Calcolo delle forze per ogni particella
         for (int i = 0; i < numParticles; ++i) {
             // calculateNetForce(treeRoot, &particles[i], theta, *f);
             std::shared_ptr<Particle<Dimension>> p = std::make_shared<Particle<Dimension>>((*particles)[i]);
@@ -283,7 +341,6 @@ void serialBarnesHut(int iterationNumber, std::vector<Particle<Dimension>>* part
             (*particles)[i].setVel(p->getVel());
         }
 
-        // Aggiornamento delle posizioni delle particelle
         for (size_t i = 0; i < numParticles; ++i) {
             //(*particles)[i].updateAndReset(delta_t);
             (*particles)[i].velocityVerletUpdate(delta_t);
@@ -299,8 +356,21 @@ void serialBarnesHut(int iterationNumber, std::vector<Particle<Dimension>>* part
 
 
 /**
- parallelBarnesHut
- **/
+ * * @brief Parallel implementation of the Barnes-Hut algorithm: it creates the quadtree, calculates the forces acting on each particle and then updates 
+ * their positions using the Verlet approximations in parallel. Finally, resets the quadtree in order for it to be created again at the following iteration 
+ * with the updated positions and writes the updated positions of the particles on the file after delta_t time in a serial way.
+ * 
+ * @tparam Dimension Number of dimensions of the simulation
+ * @param iterationNumber Number of iterations
+ * @param particles Reference to the vector of particles in the simulation
+ * @param dimSimulationArea Dimension of the simulation area
+ * @param softening Overhead to avoid particles overlapping and fusing together
+ * @param delta_t Time step after which the simulation is updated
+ * @param f Reference to the Force object responsible for calculating particle interactions.
+ * @param speedUp Speedup factor
+ * @param numFilesAndThreads Number of files and threads used for the simulation
+ *
+*/
 template <size_t Dimension>
 void parallelBarnesHut(int iterationNumber, std::vector<Particle<Dimension>>* particles, int dimSimulationArea,
                        double softening, double delta_t, Force<Dimension>& f,int speedUp, size_t numFilesAndThreads) {
@@ -400,14 +470,13 @@ void parallelBarnesHut(int iterationNumber, std::vector<Particle<Dimension>>* pa
  * @tparam Dimension Number of dimensions of the simulation
  * @param it Number of iterations
  * @param particles Reference to the vector of particles
- * @param dim Number of dimensions of the simulation (2D,3D)
+ * @param dim Dimension of the simulation area
  * @param softening Overhead to avoid particles overlapping and fusing together
  * @param delta_t Time step after which the simulation is updated
- * @param fileName Name of tile in which the function writes the coordinates of
- *the particles computed during the simulation
+ * @param fileName Name of tile in which the function writes the coordinates of the particles computed during the simulation
  * @param file Reference to the file in which the coordinates are written
- * @param f Reference to the Force object responsible for calculating particle
- *interactions.
+ * @param f Reference to the Force object responsible for calculating particle interactions.
+ * @param speedup Speedup factor
  **/
 template<size_t Dimension>
 void serialSimulation(int it, std::vector<Particle<Dimension>>* particles, int dim, double softening, double delta_t, Force<Dimension>& f, int speedup){
@@ -471,17 +540,15 @@ void serialSimulation(int it, std::vector<Particle<Dimension>>* particles, int d
  * @tparam Dimension Number of dimensions of the simulation
  * @param it Number of iterations
  * @param particles Reference to the vector of particles
- * @param dim Number of dimensions of the simulation (2D,3D)
+ * @param dim Dimension of the simulation area
  * @param softening Overhead to avoid particles overlapping and fusing together
  * @param delta_t Time step after which the simulation is updated
- * @param fileName Name of tile in which the function writes the coordinates of
- *the particles computed during the simulation
+ * @param fileName Name of tile in which the function writes the coordinates of the particles computed during the simulation
  * @param file Reference to the file in which the coordinates are written
- * @param f Reference to the Force object responsible for calculating particle
- *interactions.
- * @param u
+ * @param f Reference to the Force object responsible for calculating particle interactions.
+ * @param u Speeduo factor
+ * @param numFilesAndThreads Number of files and threads used for the simulation
  **/
-
 template<size_t Dimension>
 void parallelSimulation(int it, std::vector<Particle<Dimension>>* particles, int dim, double softening, double delta_t, Force<Dimension>& f, int u, size_t numFilesAndThreads){
 
@@ -597,9 +664,17 @@ void parallelSimulation(int it, std::vector<Particle<Dimension>>* particles, int
  *simulation chosen by the user.
  *
  * @tparam Dimension Number of dimensions of the simulation
- * @param simType Simulation type: 0 for serial, 1 for parallel
- * @param forceType Type of the force: g for gravitational force, c for coulomb
- *force
+ * @param simType Simulation type: 0 for serial, 1 for parallel, 2 for serial Barnes Hut, 3 for parallel Barnes Hut
+ * @param forceType Type of the force: g for gravitational force, c for coulomb force
+ * @param delta_t Time step after which the simulation is updated
+ * @param dimSimulationArea Dimension of the simulation area
+ * @param iterationNumber Number of iterations
+ * @param numParticles Number of particles
+ * @param mass Property of the particles: mass for the gravitational particles, charge for the coulomb particles
+ * @param maxVel Maximum velocity of the particles
+ * @param maxRadius Maximum radius of the particles
+ * @param softening Overhead to avoid particles overlapping and fusing together
+ * @param fileName Name of tile in which the function writes the coordinates of the particles computed during the simulation
  *
  **/
 template <size_t Dimension>
@@ -662,9 +737,16 @@ void main2DSimulation(int forceType, int simType, double delta_t, int dimSimulat
  *
  * @tparam Dimension Number of dimensions of the simulation
  * @param simType Simulation type: 0 for serial, 1 for parallel
- * @param forceType Type of the force: g for gravitational force, c for coulomb
- *force
- *
+ * @param forceType Type of the force: g for gravitational force, c for coulomb force
+ * @param delta_t Time step after which the simulation is updated
+ * @param dimSimulationArea Dimension of the simulation area
+ * @param iterationNumber Number of iterations
+ * @param numParticles Number of particles
+ * @param mass Property of the particles: mass for the gravitational particles, charge for the coulomb particles
+ * @param maxVel Maximum velocity of the particles
+ * @param maxRadius Maximum radius of the particles
+ * @param softening Overhead to avoid particles overlapping and fusing together
+ * @param fileName Name of tile in which the function writes the coordinates of the particles computed during the simulation
  **/
 template <size_t Dimension>
 void main3DSimulation(int forceType, int symType, double delta_t, int dimSimulationArea, int iterationNumber,
@@ -707,6 +789,9 @@ void main3DSimulation(int forceType, int symType, double delta_t, int dimSimulat
     //file.close();
 }
 
+/**
+ * @brief Helper function for the user
+*/
 void showHelp() {
     std::cout << "Change the following parameters if you don't want to run the default simualtion: "<< std::endl;
     std::cout << "      -h : prints helper " << std::endl;
