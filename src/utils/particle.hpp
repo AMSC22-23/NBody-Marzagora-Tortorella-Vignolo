@@ -223,9 +223,17 @@ class Particle {
         void manageCollision(Particle<Dimension> &p, double dim){
             if(dim){
                 for(size_t i = 0; i < Dimension; ++i){
-                    if (pos[i] + radius > dim || pos[i] - radius < -dim){
+                    if (pos[i] + radius > dim){
                         vel[i] = -vel[i];
-                    } 
+                        if(pos[i] > dim)
+                            pos[i] = dim;
+                    }
+                    else if ( pos[i] - radius < -dim)
+                    {
+                        vel[i] = -vel[i];
+                        if(pos[i] < -dim)
+                            pos[i] = -dim;
+                    }
                 }
             }
             else{ 
