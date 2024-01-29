@@ -562,14 +562,14 @@ void parallelSimulation(int it, std::vector<Particle<Dimension>>* particles, int
     std::array<double,Dimension> force;
     std::ofstream file;
     std::vector<std::FILE*> files(numFilesAndThreads);
-    //initialize all files
+    
     for (int i = 0; i < numFilesAndThreads; ++i) {
         std::string fileName = "../graphics/Coordinates_" + std::to_string(i) + ".txt";
         const char* re = fileName.c_str();
         files[i] = fopen(re, "w");
     }
 
-    //check if all files are open
+    
     for (int i = 0; i < numFilesAndThreads; ++i) {
         if (files[i] == NULL) {
             std::cout << "Error opening file!" << std::endl;
@@ -784,7 +784,6 @@ void main3DSimulation(int forceType, int symType, double delta_t, int dimSimulat
         std::cout << "Time taken by parallel simulation: " << end - start << " seconds" << std::endl;
     }
 
-    //file.close();
 }
 
 /**
@@ -815,15 +814,15 @@ void showHelp() {
 
 int main(int argc, char** argv) {
     int dim = 2;
-    int simType = 3;
+    int simType = 1;
     int forceType = 0;
-    double delta_t = 0.1;
-    int dimSimulationArea = 80000;
+    double delta_t = 0.01;
+    int dimSimulationArea = 500;
     int iterationNumber = 1000;
-    int numParticles = 8000;
-    int mass = 50;
-    int maxVel = 10;
-    int maxRadius = 15;
+    int numParticles = 50;
+    int mass = 1000;
+    int maxVel = 5;
+    int maxRadius = 10;
     double softening = 0.7;
     int speedUp = 1;
     std::string fileName = "../graphics/Info.txt";
