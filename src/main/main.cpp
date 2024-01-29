@@ -725,8 +725,6 @@ void main2DSimulation(int forceType, int simType, double delta_t, int dimSimulat
         end = time(NULL);
         std::cout << "Time taken by parallel Barnes Hut: " << end - start << " seconds" << std::endl;
     }
-
-    //file.close();
 }
 
 /**
@@ -820,14 +818,14 @@ int main(int argc, char** argv) {
     int simType = 3;
     int forceType = 0;
     double delta_t = 0.1;
-    int dimSimulationArea = 10000;
+    int dimSimulationArea = 80000;
     int iterationNumber = 1000;
-    int numParticles = 1000;
+    int numParticles = 8000;
     int mass = 50;
     int maxVel = 10;
     int maxRadius = 15;
     double softening = 0.7;
-    int speedUp = 10;
+    int speedUp = 1;
     std::string fileName = "../graphics/Info.txt";
 
     if (argc < 2) {
@@ -1034,9 +1032,9 @@ int main(int argc, char** argv) {
         main2DSimulation<2>(forceType, simType, delta_t, dimSimulationArea, iterationNumber, numParticles, mass, maxVel,
                             maxRadius, softening, fileName, speedUp);
     } else if (dim == 3) {
-        // main3DSimulation<3>(forceType, simType, delta_t, dimSimulationArea,
-        // iterationNumber, numParticles, mass, maxVel, maxRadius, softening,
-        // fileName, speedUp);
+        main3DSimulation<3>(forceType, simType, delta_t, dimSimulationArea,
+        iterationNumber, numParticles, mass, maxVel, maxRadius, softening,
+        fileName, speedUp);
     }
 
     return 0;
