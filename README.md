@@ -2,9 +2,9 @@
 Implementation of "N-Body Problem" for AMSC course.
 
 # Overview
-This program implements the N-Body Problem simulation for elastic collisions between particles of the same force (gravitational or Coulomb force) with Euler's method in C++, based on Chapter 7 of Pacheco textbook.
+This program implements two solvers for the N-Body Problem simulation for elastic collisions between particles of the same force (gravitational or Coulomb force): the first one is the standard algorithm, which takes advantage of the simmetry of the computation, Netwon's laws and the Euler's method to compute velocities and positions. The second solver, instead, is based on the Barnes and Hut algorithm to speedup the computation using a tree-like structure, a quadtree, to identify the position of the particles inside the simulation area and to take advantage of the center of mass of particles to calculate forces between particles that are far from the others. In this algorithm, we used the Verlet approximation to compute the new positions and velocities in order to obtain a better estimate during the calculations and a parallel write on file to accelerate the algorithm even more.
 
-The simulation can be performed in 2D or 3D using the same code and the result is displayed accordingly.
+The simulation can be performed in 2D or 3D for the standard solver and in 2D for Barnes and Hut, using the same code and the result is displayed accordingly.
 Moreover, the program runs the simulation both in parallel, implemented with OpenMP, and serially. 
 
 # How to run the visual simulation 
