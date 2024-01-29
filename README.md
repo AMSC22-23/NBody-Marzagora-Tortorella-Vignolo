@@ -64,4 +64,4 @@ If any mistakes is made, the program terminates and it must be run again to perf
 
 # Documentation
 
-You can find a detailed report about the reasoning behind the algorithms inside the "documentation folder", as well as a reference manual with all the code implemented for this project and a web page generated usind Doxygen.
+You can find a detailed report about the reasoning behind the algorithms , as well as a reference manual with all the code implemented for this project generated using Doxygen.
