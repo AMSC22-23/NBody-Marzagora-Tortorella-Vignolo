@@ -61,3 +61,7 @@ To change the parameters of the simulation run
 where flags and the values needed are specificied inside helper function displayed by the program.
 
 If any mistakes is made, the program terminates and it must be run again to perform the simulation.
+
+# Documentation
+
+You can find a detailed report about the reasoning behind the algorithms inside the "documentation folder", as well as a reference manual with all the code implemented for this project and a web page generated usind Doxygen.
