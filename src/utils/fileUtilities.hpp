@@ -20,6 +20,8 @@
  * @param it Number of iterations
  **/
 
+//@note use const & not pointers for the vectors. Safer since the vectors are not modified and references
+//are more efficient than pointers
 template <size_t Dimension>
 void printInitialStateOnFile(std::vector<Particle<Dimension>> *particles, int dim, std::string fileName, int it, int speedUp, size_t numFilesAndThreads)
 {
@@ -62,6 +64,8 @@ void printInitialStateOnFile(std::vector<Particle<Dimension>> *particles, int di
  * @param file Reference to the file in which the particles are going to be written
  * 
 */
+//@note here is ok for the const &. You are using C style I/O. Not wrong but not the best practice in C++
+// use C++ iostrems instead
 template <size_t Dimension>
 void writeParticlePositionsToFile(const std::vector<Particle<Dimension>> &particles, FILE* file)
 {

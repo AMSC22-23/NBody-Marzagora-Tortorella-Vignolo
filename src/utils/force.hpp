@@ -17,6 +17,10 @@ class Force{
         /**
         * @brief Default constructor for the Force class.
         * */
+       //@note it is useless to define a default constructor that is identical to the 
+      // default syntethised constructor provided for free by the compile. 
+      // It is better to simply remove it and let the compiler to its job. Or, at least, to define it as default.
+      // Force() = default;
         Force(){}
 
         /**
@@ -29,6 +33,7 @@ class Force{
 
         /**
         * @brief Default destructor for the Force class.
+        * @note You need a virtual desctuctor, but you could have just written virtual ~Force() = default;
         * */
         virtual ~Force() {}
 };
@@ -51,6 +56,7 @@ class GravitationalForce : public Force<Dimension>{
             const auto& q_pos = q.getPos();
             
             std::array<double, Dimension> pos_diff;
+        
             for(size_t i = 0; i < Dimension; ++i) pos_diff[i] = q_pos[i] - k_pos[i];
           
             double dist_squared = 0.0;

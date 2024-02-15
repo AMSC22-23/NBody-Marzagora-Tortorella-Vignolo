@@ -49,7 +49,7 @@ std::vector<Particle<Dimension>> generateRandomParticles(int N, int posBoundary 
     std::array<double, Dimension> pos, vel;
 
     std::random_device rd;
-    std::mt19937 gen(rd());
+    std::mt19937 gen(rd());//@note nice use of random_device
     std::uniform_real_distribution<double> disProperty(minProperty, maxProperty);
     std::uniform_real_distribution<double> disVel(-maxVel, maxVel);
     std::uniform_real_distribution<double> disRadius(minRadius, maxRadius);

@@ -39,6 +39,7 @@ class QuadtreeNode {
     }
     /**
      * @brief Default destructor for the quadtreeNode class
+     * @note Not needed, the synthetised one is ok
     */
     ~QuadtreeNode() {}
 
@@ -128,7 +129,7 @@ class QuadtreeNode {
         }
 
         if (!children[index]->getParticle()) {
-            children[index] = std::move(subTreeRoot);
+            children[index] = std::move(subTreeRoot);//@note nice use of move
         } else {
             children[index]->insertNode(std::move(subTreeRoot), depth + 1);
         }

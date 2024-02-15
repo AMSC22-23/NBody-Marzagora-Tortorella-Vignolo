@@ -15,6 +15,7 @@
  * @param particles Vector of particles to be inserted into the tree
  * @param dimSimulationArea Dimension of the simulation area
 */
+//@note particles are not changed, use const & for the vector. Of course then you need const auto & in the for loop
 template <size_t Dimension>
 std::unique_ptr<QuadtreeNode<Dimension>> createQuadTree(std::vector<Particle<Dimension>>& particles,
                                                         double dimSimulationArea) {
@@ -50,6 +51,7 @@ std::unique_ptr<QuadtreeNode<Dimension>> createQuadTree(std::vector<Particle<Dim
  * @param y Y coordinate of the center of the subregion
  * @param centers Vector of arrays of doubles representing the centers of the subregions
 */
+//@note use & for the vector. References are more efficient than pointers.
 template <size_t Dimension>
 void assignRegions(double regionWidth, double dim, double x, double y,
                    std::vector<std::array<double, Dimension>>* centers) {
